@@ -115,7 +115,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
               <div
                 key={idx}
                 className={`h-1 rounded-full transition-all ${
-                  idx < currentIndex ? 'w-6 bg-emerald-500' :
+                  idx < currentIndex ? 'w-6 bg-emerald-700' :
                   idx === currentIndex ? 'w-10 bg-emerald-400' :
                   'w-4 bg-white/20'
                 }`}
@@ -172,7 +172,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
         <motion.button
           onClick={() => handleSwipe('right')}
           disabled={isExiting}
-          className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center shadow-xl disabled:opacity-50"
+          className="w-20 h-20 rounded-full bg-emerald-700 flex items-center justify-center shadow-xl disabled:opacity-50"
           whileTap={{ scale: 0.9 }}
         >
           <Heart className="w-9 h-9 text-white fill-white" />
@@ -259,7 +259,7 @@ function SwipeCard({ dish, onSwipe, isExiting }: SwipeCardProps) {
 
       {/* Swipe indicators */}
       <motion.div
-        className="absolute top-12 right-8 px-8 py-4 bg-emerald-500 rounded-2xl rotate-12 border-4 border-white shadow-2xl z-20"
+        className="absolute top-12 right-8 px-8 py-4 bg-emerald-700 rounded-2xl rotate-12 border-4 border-white shadow-2xl z-20"
         style={{ opacity: likeOpacity }}
       >
         <span className="text-white text-3xl font-bold drop-shadow">OUI!</span>
@@ -293,7 +293,7 @@ function ParticleExplosion({ ingredients }: ParticleExplosionProps) {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute top-1/2 left-1/2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg font-medium"
+          className="absolute top-1/2 left-1/2 px-4 py-2 bg-emerald-700 text-white rounded-full shadow-lg font-medium"
           initial={{ 
             x: 0, 
             y: 0, 
@@ -318,7 +318,7 @@ function ParticleExplosion({ ingredients }: ParticleExplosionProps) {
 
       {/* Basket icon at bottom */}
       <motion.div
-        className="absolute bottom-24 right-8 w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-2xl"
+        className="absolute bottom-24 right-8 w-20 h-20 bg-emerald-700 rounded-full flex items-center justify-center shadow-2xl"
         initial={{ scale: 1 }}
         animate={{ scale: [1, 1.4, 1] }}
         transition={{ duration: 0.6, delay: 0.3 }}

@@ -28,14 +28,14 @@ export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
           
           if (isCamera) {
             return (
-              <button
+              <motion.button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className="relative -mt-7 z-10"
+                className="relative flex flex-col items-center justify-center py-1 px-3 min-w-[60px] z-10 mt-0.5"
+                whileTap={{ scale: 0.9 }}
               >
                 <motion.div
-                  className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-2xl border-2 border-white/20"
-                  whileTap={{ scale: 0.85 }}
+                  className="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center shadow-xl border-2 border-white/20"
                   whileHover={{ scale: 1.05 }}
                   animate={isActive ? { 
                     boxShadow: [
@@ -46,9 +46,10 @@ export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
                   } : {}}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <Icon className="w-8 h-8 text-white" strokeWidth={2.5} />
+                  <Icon className="w-6 h-6 text-white" strokeWidth={2.5} />
                 </motion.div>
-              </button>
+                <div className="h-4" />
+              </motion.button>
             );
           }
           

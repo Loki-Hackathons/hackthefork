@@ -183,7 +183,7 @@ export function ChallengesScreen() {
               </div>
               
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-full bg-emerald-700 flex items-center justify-center text-2xl">
                 {entry.avatar}
               </div>
               
@@ -259,7 +259,7 @@ function ChallengeCard({ challenge }: ChallengeCardProps) {
             {challenge.participants.slice(0, 3).map((avatar, idx) => (
               <div
                 key={idx}
-                className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-black flex items-center justify-center text-sm"
+                className="w-8 h-8 rounded-full bg-emerald-700 border-2 border-black flex items-center justify-center text-sm"
               >
                 {avatar}
               </div>
@@ -281,7 +281,7 @@ function ChallengeCard({ challenge }: ChallengeCardProps) {
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-emerald-500"
+              className="h-full rounded-full bg-emerald-700"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
