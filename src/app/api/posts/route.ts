@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { calculateScores } from '@/lib/scoring';
+import type { DetectedIngredient } from '@/lib/image-analysis';
 
 // Lazy import for image analysis to avoid loading sharp on GET requests
 async function getImageAnalysis() {
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Analyze image (CLIP-based detection)
     // Lazy load image analysis module only when needed
-    let detectedIngredients;
+    let detectedIngredients: DetectedIngredient[];
     try {
       const imageAnalysis = await getImageAnalysis();
       // Try CLIP analysis, but fallback gracefully if it fails
@@ -107,8 +108,8 @@ export async function POST(request: NextRequest) {
       console.warn('Image analysis not available, using fallback detection:', error);
       // Fallback to basic detection based on common meal patterns
       detectedIngredients = [
-        { name: 'vegetables', confidence: 0.7, category: 'plant' },
-        { name: 'rice', confidence: 0.65, category: 'plant' }
+        { name: 'vegetables', confidence: 0.7, category: 'plant' as const },
+        { name: 'rice', confidence: 0.65, category: 'plant' as const }
       ];
     }
     const scores = calculateScores(detectedIngredients);
@@ -127,7 +128,8 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
       // Provide helpful error message
-      if (uploadError.message?.includes('Bucket not found') || uploadError.statusCode === '404') {
+      const errorMessage = uploadError.message || String(uploadError);
+      if (errorMessage.includes('Bucket not found') || errorMessage.includes('404') || errorMessage.includes('bucket')) {
         throw new Error('Storage bucket "meal-images" not found. Please create it in Supabase Storage and set up policies (see SETUP.md)');
       }
       throw uploadError;
