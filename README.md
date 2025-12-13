@@ -65,3 +65,34 @@ The project is divided into two main parts:
    npm install
    npm run dev
    ```
+
+3. **Service d'Automatisation Carrefour** (Nouveau - Feature Carrefour):
+   ```bash
+   cd automation-service
+   npm install
+   npm start
+   ```
+   Le service sera disponible sur `http://localhost:3001`
+
+## 🛒 Feature Carrefour - Automatisation du Panier
+
+### Description
+Killer feature pour la démo : un bouton "Commander les ingrédients" qui ouvre automatiquement un navigateur, va sur le site Carrefour Drive, cherche les produits alternatifs et les ajoute au panier en mode Invité.
+
+### Architecture
+- **Service Node.js** (`automation-service/`): Service Express avec Puppeteer pour l'automatisation
+- **Composant React** (`frontend/src/components/CarrefourOrderButton.tsx`): Bouton de déclenchement
+- **Stack**: Puppeteer Extra + Stealth Plugin, React, Express
+
+### Utilisation
+1. Démarrer le service d'automatisation : `cd automation-service && npm start`
+2. Démarrer le frontend : `cd frontend && npm run dev`
+3. Cliquer sur le bouton "COMMANDER LE PANIER" dans l'interface
+4. Le navigateur s'ouvre automatiquement et ajoute les produits au panier Carrefour
+
+### Fonctionnalités
+- ✅ Automatisation avec Puppeteer (mode visible pour la démo)
+- ✅ Plugin Stealth pour éviter la détection bot
+- ✅ Gestion d'erreurs robuste
+- ✅ Logs détaillés avec emojis
+- ✅ Navigateur reste ouvert à la fin pour la démo
