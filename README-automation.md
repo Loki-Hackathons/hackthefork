@@ -1,98 +1,149 @@
-# HackTheFork - Project Skeleton
+# HackTheFork - BeReal for Meals
+
+A B2C hackathon MVP for a food sustainability app. Users post photos of their meals, and the app automatically analyzes them to compute vegetal proportion, health, and carbon footprint scores.
+
+## Features
+
+- 📸 **Photo Upload**: Users can upload meal photos
+- 🤖 **AI Analysis**: CLIP-based zero-shot ingredient detection
+- 📊 **Scoring System**: 
+  - Vegetal Score (0-100): Plant-based proportion
+  - Health Score (0-100): Nutrition heuristic
+  - Carbon Score (0-100): Relative footprint (higher = better)
+- 📱 **Social Feed**: Instagram-style feed with upvotes
+- 📈 **User Stats**: Aggregated statistics per user
+- 🍪 **Cookie-based Identity**: No login required - anonymous user IDs
+
+## Tech Stack
+
+- **Next.js 16** (App Router)
+- **Supabase** (Postgres + Storage)
+- **CLIP** (via @xenova/transformers) for image analysis
+- **TypeScript**
+- **Tailwind CSS**
+- **Framer Motion** (animations)
+
+## Quick Start
+
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+2. **Set up Supabase**:
+   - Create a project at [supabase.com](https://supabase.com)
+   - Run the SQL schema from `supabase/schema.sql`
+   - Create a storage bucket named `meal-images` (public)
+   - Copy your project URL and anon key
+
+3. **Configure environment**:
+   Create `.env.local`:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+4. **Run development server**:
+   ```bash
+   pnpm dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
-The project is divided into two main parts:
-- `backend/`: Python FastAPI application (Logic, AI, Scoring).
-- `frontend/`: TypeScript/Vite WebApp (UI generated via Figma, Logic).
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── posts/route.ts      # Create & fetch posts
+│   │   ├── upvote/route.ts     # Toggle upvotes
+│   │   └── stats/route.ts      # User statistics
+│   └── page.tsx                # Main entry point
+├── components/
+│   ├── CameraScreen.tsx        # Photo capture & analysis
+│   ├── FeedScreen.tsx          # Social feed
+│   ├── ProfileScreen.tsx       # User stats
+│   └── ...
+├── lib/
+│   ├── supabase.ts            # Supabase client
+│   ├── cookies.ts             # User ID management
+│   ├── image-analysis.ts      # CLIP analysis
+│   └── scoring.ts             # Score calculation
+└── services/
+    └── api.ts                  # API client functions
+```
 
-## File Guide (Detailed)
+## Database Schema
 
-### Backend (`backend/`)
-- `requirements.txt`: Python dependencies list (FastAPI, Supabase, etc.).
-- `app/main.py`: Application entry point, aggregates all API routers.
-- `app/core/config.py`: Environment configuration (Supabase URL/Key, Project settings).
-- `app/api/v1/auth.py`: Authentication endpoints (Login/Register wrapper).
-- `app/api/v1/feed.py`: "BeReal" feature endpoints (Get feed, Post photo).
-- `app/api/v1/recipes.py`: "Tinder" feature endpoints (Get recommendations, Swipe action).
-- `app/api/v1/shopping.py`: "Jow" feature endpoints (Add recipe to cart, Checkout).
-- `app/api/v1/users.py`: User profile and leaderboard endpoints.
-- `app/services/recommendation_service.py`: Logic for the recipe recommendation algorithm.
-- `app/services/scoring_service.py`: Logic for calculating Eco/Healthy scores (Image + Product data).
-- `app/services/shopping_service.py`: Logic to convert abstract recipes into specific retailer products.
+- **users**: Anonymous user IDs (from cookies)
+- **posts**: Meal posts with scores
+- **ingredients**: Detected ingredients per post
+- **upvotes**: One upvote per user per post
 
-### Frontend (`frontend/`)
-- `package.json`: Node dependencies (TypeScript, Vite).
-- `index.html`: Application HTML entry point.
-- `src/main.ts`: TypeScript entry point, mounts the React app.
-- `src/types/index.ts`: Shared TypeScript interfaces (User, Recipe, Post data models).
-- `src/services/api.ts`: Axios/Fetch wrapper for communicating with the Python Backend.
-- `src/features/auth/authService.ts`: Supabase Auth logic wrapper.
-- `src/features/shopping/shoppingService.ts`: Cart management and Checkout logic.
-- `src/features/swipe/SwipeDeck.ts`: Logic/Component for the recipe card stack.
-- `src/features/social/`: Directory reserved for Feed/Camera components.
+## API Endpoints
 
-## How to split tasks (Team of 4)
+- `POST /api/posts` - Create post (upload + analyze + save)
+- `GET /api/posts` - Fetch feed posts
+- `POST /api/upvote` - Toggle upvote
+- `GET /api/upvote` - Check upvote status
+- `GET /api/stats` - Get user statistics
 
-### Developer 1: The "Tinder" Mechanic (Frontend + API)
-- **Focus**: `frontend/src/features/swipe/` and `backend/app/api/v1/recipes.py`
-- **Goal**: Build the swipe UI and the recommendation algorithm connection.
+## Scoring Algorithm
 
-### Developer 2: Social & Feed (Frontend + API)
-- **Focus**: `frontend/src/features/social/` and `backend/app/api/v1/feed.py`
-- **Goal**: Build the "BeReal" style feed, photo uploading, and display.
+### Vegetal Score
+- Weighted proportion of plant-based ingredients
+- Plant proteins count as 1.2x, animals as 0.5x
 
-### Developer 3: Shopping & Jow Integration (Frontend + API)
-- **Focus**: `frontend/src/features/shopping/` and `backend/app/api/v1/shopping.py`
-- **Goal**: Handle the cart logic and the "Recipe to Products" conversion.
+### Health Score
+- Base: 60
+- +15 for vegetables/salad
+- +10 for plant proteins
+- -20 for fried foods
+- -5 per animal product
 
-### Developer 4: Core, Auth & Scoring Engine (Backend Focus)
-- **Focus**: `backend/app/services/scoring_service.py`, `backend/app/core/`, and Auth setup.
-- **Goal**: Implement the "Healthy/Eco" scoring algorithm and manage database models/Supabase config.
+### Carbon Score
+- Base: 80
+- -40 for beef
+- -25 for pork
+- -15 for chicken
+- -10 for fish/dairy
+- +10 for plant proteins
+- +5 for multiple vegetables
 
-## Setup
+## Demo Mode
 
-1. **Backend**:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload
-   ```
+This is a **demo-first** product:
+- No authentication system
+- Cookie-based anonymous user IDs
+- All RLS policies allow all operations
+- Optimized for clarity and demo impact
 
-2. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Service d'Automatisation Carrefour** (Nouveau - Feature Carrefour):
-   ```bash
-   cd automation-service
-   npm install
-   npm start
-   ```
-   Le service sera disponible sur `http://localhost:3001`
-
-## 🛒 Feature Carrefour - Automatisation du Panier
+## 🛒 Feature Auchan - Automatisation du Panier
 
 ### Description
-Killer feature pour la démo : un bouton "Commander les ingrédients" qui ouvre automatiquement un navigateur, va sur le site Carrefour Drive, cherche les produits alternatifs et les ajoute au panier en mode Invité.
+Killer feature pour la démo : un bouton "Commander les ingrédients" qui ouvre automatiquement un navigateur, va sur le site Auchan Drive, cherche les produits et les ajoute au panier.
 
 ### Architecture
-- **Service Node.js** (`automation-service/`): Service Express avec Puppeteer pour l'automatisation
-- **Composant React** (`frontend/src/components/CarrefourOrderButton.tsx`): Bouton de déclenchement
-- **Stack**: Puppeteer Extra + Stealth Plugin, React, Express
+- **Service Node.js** (`automation-service/`): Service Express avec Playwright pour l'automatisation
+- **Frontend Vite** (`frontend-bastian/`): Frontend React/Vite séparé pour la feature d'automatisation
+- **Composant React** (`frontend-bastian/src/components/CarrefourOrderButton.tsx`): Bouton de déclenchement
+- **Stack**: Playwright, React, Express, Vite
 
 ### Utilisation
 1. Démarrer le service d'automatisation : `cd automation-service && npm start`
-2. Démarrer le frontend : `cd frontend && npm run dev`
+2. Démarrer le frontend d'automatisation : `cd frontend-bastian && npm run dev`
 3. Cliquer sur le bouton "COMMANDER LE PANIER" dans l'interface
-4. Le navigateur s'ouvre automatiquement et ajoute les produits au panier Carrefour
+4. Le navigateur s'ouvre automatiquement et ajoute les produits au panier Auchan
 
 ### Fonctionnalités
-- ✅ Automatisation avec Puppeteer (mode visible pour la démo)
-- ✅ Plugin Stealth pour éviter la détection bot
+- ✅ Automatisation avec Playwright (mode visible pour la démo)
+- ✅ Gestion de session persistante (évite les CAPTCHAs)
 - ✅ Gestion d'erreurs robuste
-- ✅ Logs détaillés avec emojis
+- ✅ Logs détaillés avec timestamps
+- ✅ Optimisations de vitesse (timeouts minimisés)
 - ✅ Navigateur reste ouvert à la fin pour la démo
+
+## License
+
+MIT

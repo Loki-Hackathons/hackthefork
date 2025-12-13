@@ -1,0 +1,344 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { Trophy, TrendingUp, Settings, Leaf, Flame, Users } from 'lucide-react';
+import { fetchUserStats, type UserStats } from '@/services/api';
+import { getUserId } from '@/lib/cookies';
+
+const mockHistory = [
+  { id: 1, score: 95, image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?w=400' },
+  { id: 2, score: 88, image: 'https://images.unsplash.com/photo-1510035618584-c442b241abe7?w=400' },
+  { id: 3, score: 92, image: 'https://images.unsplash.com/photo-1751151497799-8b4057a2638e?w=400' },
+  { id: 4, score: 90, image: 'https://images.unsplash.com/photo-1553709225-9eb59ce4d215?w=400' },
+  { id: 5, score: 87, image: 'https://images.unsplash.com/photo-1521388825798-fec41108def2?w=400' },
+  { id: 6, score: 85, image: 'https://images.unsplash.com/photo-1649927866910-1a01a44b214c?w=400' },
+  { id: 7, score: 93, image: 'https://images.unsplash.com/photo-1543353071-c953d88f7033?w=400' },
+  { id: 8, score: 89, image: 'https://images.unsplash.com/photo-1760537440650-37ccbfe91d2c?w=400' },
+  { id: 9, score: 94, image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?w=400' },
+];
+
+const mockLeaderboard = [
+  { rank: 1, name: 'Sophie', username: '@sophie.m', score: 481, avatar: '👩‍🍳', isMe: true },
+  { rank: 2, name: 'Marc', username: '@marc.l', score: 457, avatar: '👨‍🍳', isMe: false },
+  { rank: 3, name: 'Emma', username: '@emma.r', score: 423, avatar: '👩', isMe: false },
+  { rank: 4, name: 'Thomas', username: '@thomas.d', score: 398, avatar: '👨', isMe: false },
+];
+
+export function ProfileScreen() {
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const startPos = useRef({ x: 0, y: 0 });
+  const userId = getUserId();
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    try {
+      const userStats = await fetchUserStats();
+      setStats(userStats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper to get avatar from user_id
+  const getAvatar = (id: string) => {
+    const avatars = ['👩‍🍳', '👨‍🍳', '👩', '👨', '🧑‍🍳'];
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return avatars[hash % avatars.length];
+  };
+
+  const avatar = getAvatar(userId);
+  const totalScore = stats 
+    ? Math.round((stats.avg_vegetal_score + stats.avg_health_score + stats.avg_carbon_score) / 3)
+    : 0;
+
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    startPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    const deltaX = clientX - startPos.current.x;
+    const deltaY = clientY - startPos.current.y;
+    
+    setRotation({
+      x: Math.max(-45, Math.min(45, rotation.x - deltaY * 0.5)),
+      y: Math.max(-45, Math.min(45, rotation.y + deltaX * 0.5))
+    });
+    
+    startPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Chargement...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full bg-black overflow-y-auto pb-24">
+      {/* Header */}
+      <div className="pt-12 pb-6 px-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10">
+              {avatar}
+            </div>
+            <div>
+              <h1 className="text-white text-2xl">
+                Mon Profil
+              </h1>
+              <div className="text-white/50 text-sm">
+                {userId.slice(0, 8)}...
+              </div>
+            </div>
+          </div>
+          <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+            <Settings className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        {/* Stats - Instagram style */}
+        <div className="flex items-center justify-around mb-6">
+          <div className="text-center">
+            <div className="text-white text-2xl mb-1">
+              {stats?.post_count || 0}
+            </div>
+            <div className="text-white/50 text-sm">posts</div>
+          </div>
+          <div className="text-center">
+            <div className="text-white text-2xl mb-1">
+              {stats?.avg_vegetal_score || 0}
+            </div>
+            <div className="text-white/50 text-sm">végétal</div>
+          </div>
+          <div className="text-center">
+            <div className="text-white text-2xl mb-1">
+              {stats?.avg_carbon_score || 0}
+            </div>
+            <div className="text-white/50 text-sm">carbone</div>
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            <span className="text-yellow-400">Score moyen: {totalScore}/100</span>
+          </div>
+          <div className="flex items-center gap-2 text-white/70">
+            <Flame className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm">{stats?.total_co2_avoided || 0}kg de CO₂ économisés</span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button className="flex-1 py-2.5 bg-white text-black rounded-xl">
+            Modifier le profil
+          </button>
+          <button className="flex-1 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl border border-white/20">
+            Partager
+          </button>
+          <button className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
+            <Users className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* The Globe - WOW Effect */}
+      <div className="px-6 py-8">
+        <h2 className="text-white text-xl mb-4 flex items-center gap-2">
+          <Leaf className="w-5 h-5 text-emerald-400" />
+          Impact Écologique
+        </h2>
+        
+        <div className="bg-emerald-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20">
+          {/* Background glow */}
+          <div className="absolute inset-0 bg-emerald-500/5" />
+          
+          {/* Interactive 3D visualization */}
+          <div 
+            className="relative w-full aspect-square flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleMouseDown}
+            onTouchMove={handleMouseMove}
+            onTouchEnd={handleMouseUp}
+          >
+            <svg 
+              viewBox="0 0 200 200" 
+              className="w-full h-full"
+              style={{
+                transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+              }}
+            >
+              {/* Axes */}
+              {[
+                { angle: 0, label: 'Santé', value: stats?.avg_health_score || 0, color: '#10b981' },
+                { angle: 90, label: 'Carbone', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
+                { angle: 180, label: 'Végétal', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
+                { angle: 270, label: 'Moyenne', value: totalScore, color: '#f59e0b' },
+              ].map((axis, idx) => {
+                const rad = (axis.angle * Math.PI) / 180;
+                const maxRadius = 80;
+                const valueRadius = (axis.value / 100) * maxRadius;
+                
+                return (
+                  <g key={idx}>
+                    <line
+                      x1="100"
+                      y1="100"
+                      x2={100 + maxRadius * Math.cos(rad)}
+                      y2={100 + maxRadius * Math.sin(rad)}
+                      stroke="#ffffff20"
+                      strokeWidth="1"
+                      strokeDasharray="2,2"
+                    />
+                    
+                    <circle
+                      cx={100 + valueRadius * Math.cos(rad)}
+                      cy={100 + valueRadius * Math.sin(rad)}
+                      r="5"
+                      fill={axis.color}
+                      className="drop-shadow-lg"
+                    />
+                    
+                    <text
+                      x={100 + (maxRadius + 25) * Math.cos(rad)}
+                      y={100 + (maxRadius + 25) * Math.sin(rad)}
+                      fill="white"
+                      fontSize="12"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {axis.label}
+                    </text>
+                    
+                    <text
+                      x={100 + (maxRadius + 25) * Math.cos(rad)}
+                      y={100 + (maxRadius + 25) * Math.sin(rad) + 14}
+                      fill={axis.color}
+                      fontSize="16"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {axis.value}
+                    </text>
+                  </g>
+                );
+              })}
+              
+              {/* Filled shape */}
+              <motion.path
+                d={`
+                  M ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.cos(0)} ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.sin(0)}
+                  L ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.cos(Math.PI / 2)} ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.sin(Math.PI / 2)}
+                  L ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.cos(Math.PI)} ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.sin(Math.PI)}
+                  L ${100 + (totalScore / 100) * 80 * Math.cos(3 * Math.PI / 2)} ${100 + (totalScore / 100) * 80 * Math.sin(3 * Math.PI / 2)}
+                  Z
+                `}
+                fill="url(#gradient)"
+                fillOpacity="0.3"
+                stroke="url(#gradient)"
+                strokeWidth="3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+              />
+              
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#3b82f6" />
+                </linearGradient>
+              </defs>
+              
+              {/* Center score */}
+              <circle cx="100" cy="100" r="32" fill="#000000" />
+              <circle cx="100" cy="100" r="30" fill="url(#gradient)" fillOpacity="0.2" />
+              <text
+                x="100"
+                y="95"
+                fill="white"
+                fontSize="28"
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                {totalScore}
+              </text>
+              <text
+                x="100"
+                y="112"
+                fill="#10b981"
+                fontSize="11"
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                SCORE
+              </text>
+            </svg>
+          </div>
+          
+          <p className="text-white/40 text-center text-sm mt-4">
+            Glisse pour tourner
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Summary */}
+      <div className="px-6 pb-6">
+        <h2 className="text-white text-xl mb-4 flex items-center gap-2">
+          <Leaf className="w-5 h-5 text-emerald-400" />
+          Statistiques
+        </h2>
+
+        <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score végétal moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_vegetal_score || 0}/100</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score santé moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_health_score || 0}/100</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score carbone moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_carbon_score || 0}/100</span>
+          </div>
+          <div className="pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Total CO₂ économisé</span>
+              <span className="text-emerald-400 text-xl font-bold">{stats?.total_co2_avoided || 0}kg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

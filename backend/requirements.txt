@@ -1,8 +1,0 @@
-# Dependencies for the backend
-fastapi
-uvicorn
-supabase
-pydantic
-python-multipart
-requests
-
