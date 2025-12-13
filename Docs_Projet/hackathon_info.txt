@@ -1,0 +1,335 @@
+# Submission Process, Pitch Format and What We Expect
+
+<aside>
+❓
+
+## Project Submission Method
+
+Until Sunday at 4:00 PM, you can submit your project in video format.
+
+The video must be under 2 minutes and present your solution.
+
+The submission should be a link to the video, for example uploaded privately in advance on YouTube.
+
+You can use Loom for instance to record your video.
+
+</aside>
+
+<aside>
+📢
+
+## Pitch Method
+
+In the final phase of the event, the top 10 projects will be pitched. Each pitch lasts a maximum of 4 minutes.
+
+- This pitch is expected to clearly present the problem being addressed and explain why it is important ;
+- Teams should then describe their proposed solution, and how it differs from existing approaches. A short demo or concrete illustration (such as a prototype, interface, simulation, or user journey) should be included in order to make the solution tangible.
+- Finally, teams must outline how their solution could be deployed in real-world conditions, specifying potential users, implementation steps, relevant partners, and scalability over time.
+</aside>
+
+<aside>
+💡
+
+## What we expect from the projects
+
+All projects must fall within one of the three domains of the event
+
+- Precision fermentation
+- Plant-based innovation
+- Algae-based innovation
+
+Projects outside these categories (for example insect-based proteins) are not eligible.
+
+Jury members assess projects according to four main dimensions:
+
+- Economic feasibility (practical viability, plausible costs and benefits, realistic path to implementation)
+- Environmental relevance (expected impact on emissions, land use, biodiversity, or resource efficiency; general contribution to a more sustainable food system)
+- Scientific quality (credibility of sources, methodological clarity, understanding of technological principles)
+- Overall coherence and alignment with the eligible themes
+</aside>
+
+
+
+
+
+
+
+
+
+
+# Examples of problems & ideas
+
+<aside>
+❓
+
+## Examples of ideas
+
+Environmental Impact-Based Menu Planning Tool for Canteens
+
+Identify future food product trends
+
+Create a digital tool to support consumers in shifting toward plant-based diets
+
+An app using an LLM that checks menus and, based on them, creates an ecological impact score for restaurants.
+
+AI for nudging (for canteens or supermarkets), an AI that explains where to place a given product in order to make it more appealing.
+
+</aside>
+
+<aside>
+🔥
+
+## Examples of problems
+
+Use AI to reduce losses in menu and product creation. Losses refer to the percentage of an ingredient that is lost during the production process (for example, a certain quantity of carrots lost in a carrot-based dish).
+
+How can AI generate the testing phase of plant-based analog products (meat, milk, cheese, etc.)?
+
+How can AI be used to improve traceability from raw materials to finished products?
+
+How can AI simplify ingredient lists to highlight healthier products (enhancing or improving Nutri-Score, Yuka ratings, etc.)?
+
+How can the price of a product versus its benefits be explained clearly to consumers in order to facilitate adoption?
+
+<aside>
+🔥
+
+## Challenges specific to collective catering (such as CROUS-type institutions)
+
+How to increase the selection rate of the lowest-carbon dishes and measure it
+
+How to make carbon footprint a full-fledged management indicator for a restaurant or canteen
+
+How to manage the transition of suppliers
+
+How to integrate social and environmental criteria into purchasing decisions
+
+How to measure the cost of inaction
+
+</aside>
+
+</aside>
+
+<aside>
+💡
+
+## General advice
+
+Participants are encouraged to ask mentors for clarification or for help identifying relevant topics.
+
+A specific workshop on problem identification will take place at 11:30 am on Saturday, and another one on plant-based food challenges at 4 pm. 
+
+Participants are encouraged to go beyond this list and to find ideas that address original problems.
+
+</aside>
+
+
+
+
+
+
+
+
+
+# OFFICIAL HACKATHON RULES
+
+PURPOSE
+
+The hackathon aims to stimulate innovation in food by bringing together talented participants to develop technological, strategic, or product solutions that contribute to the transition toward a more sustainable diet.
+
+All projects must fall within one of the three domains of the event
+
+- Precision fermentation
+- Plant-based innovation
+- Algae-based innovation
+
+Projects outside these categories (for example insect-based proteins) are not eligible.
+
+PARTICIPATION REQUIREMENTS
+
+- Open to everyone, regardless of academic background or affiliation.
+- Participants must register through the online form available on the official event website.
+- All applications will be reviewed and selected by the organizers.
+- Any incomplete or non-compliant registration will be considered null.
+
+EVENT PROCEDURE
+
+- Dates: December 13–14, 2025
+- Venue: École 42, 96 Bd Bessières, 75017 Paris, France
+
+**Participants will be divided into multidisciplinary teams and will work on challenges related to plant-based food, algae-based food and precision fermentation.**
+
+Teams are formed both before and during the hackathon. Prior to the event, participants can sign up via a shared spreadsheet; on Saturday, December 13, one of the first workshops will be dedicated to forming teams for those who did not register beforehand.
+
+Team formation is flexible, with two conditions: 1. a team cannot have more than five members; 2. a team cannot include more than two non-tech profiles (by “tech”, we mean engineers, coders, programmers, etc). Non-tech profiles (agronomy, business, etc.) are in the minority, and we believe it is important to encourage multidisciplinary teams.
+
+SELECTION CRITERIA
+
+Jury members assess projects according to four main dimensions:
+
+- Economic feasibility (practical viability, plausible costs and benefits, realistic path to implementation)
+- Environmental relevance (expected impact on emissions, land use, biodiversity, or resource efficiency; general contribution to a more sustainable food system)
+- Scientific quality (credibility of sources, methodological clarity, understanding of technological principles)
+- Overall coherence and alignment with the eligible themes
+
+The authenticity of the code will also be taken into account in the evaluation of the projects.
+
+Teams are not required to solve a pre-existing problem. They may propose new opportunities, conceptual frameworks, or creative hypotheses.
+
+PRIZES
+
+- 1st place: €3,000
+- 2nd place: €2,000
+- 3rd place: €1,000
+
+The prizes will be awarded to the teams. They can be used to help implement the projects. A mentorship program will also be offered to the winners.
+
+BLACKBOX PRIZES
+
+Blackbox.ai provides all participants with $100 in credits to use its AI and coding services.
+
+The winners selected by the jury will also receive additional Blackbox credits as prizes:
+
+- $1,000 in credits for the team ranked 1st
+- $750 for the team ranked 2nd
+- $500 for the team ranked 3rd
+
+Teams must have at least tested the provided credits to be eligible for the Blackbox prize.
+
+INTELLECTUAL PROPERTY
+
+Participants retain ownership of their creations. By participating, they grant the co-organizers the right to communicate, report, and incorporate ideas from the projects in publications or reports, but all other rights remain with the participants.
+
+By taking part in the event, each participant agrees that photographs and videos taken during the hackathon may be used by the organizers for communication, promotion, and archiving purposes, on any type of medium (website, social media, press materials, institutional documents, etc.).
+
+Anyone who does not wish to appear in these materials must explicitly inform the organizers at the latest during participant check-in. In the absence of such notification, permission for publication will be deemed granted.
+
+ORGANIZERS
+
+Hack the Fork is organized by the ICA, a non-profit association, and 42 Sentience, a student association of l’École 42.
+
+LIABILITY
+
+- Hack the Fork and Sentience 42 disclaim all liability for loss, theft, or damage occurring during the hackathon.
+- Each organizer is responsible for their own actions and the logistical management they provide.
+- Participants are responsible for their personal belongings and must ensure their own safety.
+
+ACCEPTANCE OF THE RULES
+
+Participation implies full acceptance of these rules. In case of dispute, parties will first attempt an amicable resolution. Failing that, the competent courts will be those of ICA’s registered office.
+
+
+
+
+
+
+
+
+INFOS UTILES SITES 👍1. Ciqual (ANSES) – brique nutritionnelle
+Ciqual est la table française de référence de composition nutritionnelle : ~3 000+ aliments, avec 60‑70 constituants (énergie, protéines, lipides, acides gras, glucides, sucres, fibres, vitamines, minéraux, etc.).​
+
+Tu peux filtrer/explorer par groupe d’aliments (fruits/légumes, produits céréaliers, plats composés, produits laitiers, etc.), récupérer les valeurs par 100 g, et les croiser ensuite avec tes propres recettes/menus.​
+
+Utilité hackathon
+
+Construire un score nutritionnel propre (ou enrichir Nutri‑Score/Yuka) pour menus de cantines, produits plant‑based, produits à base d’algues ou issus de fermentation de précision.​
+
+Simuler l’impact d’un swap (ex. viande → substitut végétal) sur protéines, fer, acides gras, etc., pour objectiver la qualité nutritionnelle de tes solutions.​
+
+2. Agribalyse (ADEME) – impact environnemental
+Agribalyse est la base française de référence d’Analyse de Cycle de Vie (ACV) des produits agricoles et alimentaires, couvrant ~2 500 produits prêts à consommer et ~250 références agricoles avec plusieurs variantes (bio, labels, etc.).​
+
+Pour chaque produit, tu as 16 indicateurs ACV (climat, usage des sols, eau, eutrophisation, etc.), un score agrégé et un indicateur de qualité des données.​
+
+Le portail permet de parcourir les aliments par grandes familles (plats composés, fruits/légumes, viandes/poissons, produits laitiers, boissons, etc.) et fournit des cas d’usage en écoconception et restauration collective.​
+
+Utilité hackathon
+
+Construire un score carbone/ACV pour menus, recettes, produits plant‑based/algues/fermentation, en particulier pour la restauration collective (CROUS, cantines, etc.).​
+
+Identifier des « quick wins » (ex. quelles classes de plats ont le meilleur ratio protéines / kg CO₂e, quelles familles végétales remplacer pour baisser eau/terre, etc.).​
+
+3. Open Food Facts – base produits & labels
+Open Food Facts est une base de données collaborative et ouverte sur les produits alimentaires du monde entier, avec plus d’un million de produits, qui recense ingrédients, allergènes, infos nutritionnelles et détails d’étiquetage.​
+
+Pour la France, tu peux chercher des produits précis, faire de la recherche avancée, visualiser des graphiques/cartes, et récupérer Nutri‑Score, degré de transformation, et un « Green‑Score » environnemental lorsqu’il est calculé.​
+
+Toutes les données sont réutilisables librement (open data, API), ce qui en fait une base idéale pour prototyper rapidement sans collecter toi‑même les étiquettes.​
+
+Utilité hackathon
+
+Entraîner/tester un modèle qui analyse listes d’ingrédients et profils nutritionnels, et propose des reformulations plant‑based ou à base d’algues/fermentation.​
+
+Comparer automatiquement des produits classiques vs. alternatifs (ex. lardons vs. lardons végétaux) sur Nutri‑Score, additifs, empreinte environnementale (via Green‑Score/Agribalyse).​
+
+4. Oqali – observatoire de l’offre et des étiquetages
+Oqali (Observatoire de l’alimentation) suit l’évolution de la qualité nutritionnelle de l’offre de produits transformés en France (composition et informations d’étiquetage) sur le temps.​
+
+La base de données Oqali agrège les informations présentes sur les emballages (composition nutritionnelle, ingrédients, etc.), par catégories d’aliments, avec des campagnes de collecte répétées pour suivre les tendances.​
+
+Le site propose des rapports sectoriels (apéritifs à croquer, charcuterie, produits transformés à base de pomme de terre, etc.) qui décrivent l’évolution de l’offre, du marketing et des profils nutritionnels.​
+
+Utilité hackathon
+
+Positionner une innovation plant‑based/algues/fermentation par rapport à l’offre existante (par ex. montrer que ton produit améliore une tendance Oqali sur le sel, les matières grasses, etc.).​
+
+Alimenter un module d’IA qui « scanne » une fiche produit et évalue si elle s’inscrit dans une trajectoire d’amélioration (réduction sel/sucre/graisses, simplification de la liste d’ingrédients).​
+
+5. MEANS (INRAE/Cirad) – outils méthodo pour ACV & durabilité
+MEANS (Multicriteria Assessment of Sustainability) est une plateforme d’INRAE et du Cirad qui regroupe des outils d’évaluation multicritère de la durabilité des systèmes agricoles et alimentaires.​
+
+On y trouve notamment MEANS‑InOut pour construire des inventaires ACV, des méthodes ACV spécifiques (allocation des impacts pour la viande, etc.), des outils DEXI (DEXiFruits, DEXiPM, etc.), des méthodes économiques (AFA) et des outils d’évaluation globale (IDEA4, Diamond, etc.).​
+
+La plateforme est accessible sous licence, avec des webinaires, actualités et supports pour guider l’utilisateur dans le choix des méthodes et l’usage des outils.​
+
+Utilité hackathon
+
+Donner une base méthodologique solide à ton scoring environnemental et socio‑économique (au‑delà du seul CO₂) en t’inspirant des cadres multicritères MEANS.​
+
+Justifier scientifiquement ta démarche auprès du jury (choix d’indicateurs, logique de pondération, frontières système, etc.), ce qui nourrit les critères « scientific quality » et « environmental relevance ».​
+
+6. GFI (Good Food Institute) – vision & ressources protéines alternatives
+GFI est un think tank international dédié aux protéines alternatives (plant‑based, cultivées, fermentation), positionné sur science, politique publique et industrie.​
+
+Le site présente les trois grandes familles d’alternative proteins (plant‑based, viande cultivée, fermentation), explique leurs bénéfices potentiels (climat, usages des ressources, sécurité alimentaire) et propose de nombreuses ressources, rapports et blogs.​
+
+GFI dispose d’une présence globale (Europe, Inde, Israël, Brésil, Asie‑Pacifique, etc.), de programmes de recherche, d’un « Alt Protein Project » dans les universités et de rapports de stratégie nationale pour les protéines alternatives.​
+
+Utilité hackathon
+
+Reprendre le framing GFI pour expliquer au jury pourquoi la fermentation de précision, les produits plant‑based et les algues sont stratégiques pour un système alimentaire durable.​
+
+T’inspirer de leurs ressources pour définir des cas d’usage, des verrous technologiques (texture, saveur, coût, nutrition) et des trajectoires de scale‑up.​
+
+7. LSA‑Conso – tendances marché & distribution
+LSA‑Conso est un média professionnel sur la grande consommation (distributeurs, industriels, tendances marchés, consommation, digital, durabilité).​
+
+Le site fournit des reportages (ex. transformation d’hypermarchés), des analyses de marchés (raclette, bio, DPH, spiritueux, etc.), des dossiers « Green » (décarbonation, souveraineté alimentaire), ainsi que des data boards chiffrés et des hors‑séries innovation.​
+
+On y trouve aussi des exemples d’innovations produits, de démarches RSE, de décarbonation logistique, et des indicateurs de consommation (appétence pour le bio, hyperprotéiné, etc.).​
+
+Utilité hackathon
+
+Ancrer ton projet dans les réalités marché et retail (ce que font déjà les enseignes, comment elles communiquent sur décarbonation, comment se vend le plant‑based, etc.).​
+
+Identifier des segments porteurs (ex. produits protéinés, anti‑gaspillage, snacking responsable) et calibrer ton modèle économique, ton go‑to‑market et tes partenaires potentiels (enseignes, industriels).[​
+
+8. Synthèse opérationnelle pour tes idées HackTheFork
+En combinant ces briques, tu peux imaginer, par exemple :
+
+Un outil de planification de menus “four‑scores” pour cantines : nutrition (Ciqual + Oqali), environnement (Agribalyse + éventuellement MEANS‑like), coût matière et acceptabilité marché (LSA‑Conso pour calibrer les produits/segments), avec un module IA qui propose des menus optimisés bas carbone et riches en protéines végétales ou algues.​
+
+Un assistant R&D pour produits plant‑based / algues / fermentation : tu pars d’un produit existant dans Open Food Facts, ton outil propose des reformulations plant‑based/algues/fermentation, en estimant nutrition (Ciqual), impact environnement (Agribalyse), positionnement marché (LSA‑Conso) et alignement avec la vision GFI sur les protéines alternatives.​
+
+Un tableau de bord “transition protéines” pour acteurs publics ou grands groupes : indicateurs d’offre et de reformulation (Oqali, Open Food Facts), d’impact (Agribalyse, MEANS), et de trajectoire stratégique alignée avec les cadres GFI, avec scénarios de bascule vers plant‑based/algues/fermentation de précision.
+
+
+
+
+
+
+
+
+
+
+
