@@ -1,0 +1,8 @@
+# Dependencies for Vercel serverless function
+fastapi
+mangum
+supabase
+pydantic
+python-multipart
+requests
+

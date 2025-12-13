@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingCart, ArrowRight, Leaf, TrendingDown, CheckCircle, AlertCircle, X } from 'lucide-react';
+import type { Screen } from './MainApp';
 
 const mockRecipe = {
-  name: 'curry maison 🍛',
+  name: 'homemade curry 🍛',
   image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob21lbWFkZSUyMGZvb2QlMjBwbGF0ZXxlbnwxfHx8fDE3NjU2NDQwNDh8MA&ixlib=rb-4.1.0&q=80&w=1080',
   ingredients: [
     { 
@@ -59,7 +60,11 @@ const mockRecipe = {
   ]
 };
 
-export function ShopScreen() {
+interface ShopScreenProps {
+  onNavigate: (screen: Screen) => void;
+}
+
+export function ShopScreen({ onNavigate }: ShopScreenProps) {
   const [ingredients, setIngredients] = useState(mockRecipe.ingredients);
   const [showSwap, setShowSwap] = useState<number | null>(null);
 
@@ -104,7 +109,10 @@ export function ShopScreen() {
       {/* Header with recipe */}
       <div className="pt-12 pb-4 px-6">
         <div className="flex gap-4 items-start mb-4">
-          <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <button 
+            onClick={() => onNavigate('feed')}
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform"
+          >
             <X className="w-6 h-6 text-white" />
           </button>
           <div className="flex-1">
@@ -112,7 +120,7 @@ export function ShopScreen() {
               {mockRecipe.name}
             </h1>
             <p className="text-white/50 text-sm">
-              {ingredients.filter(i => i.checked).length} ingrédients à commander
+              {ingredients.filter(i => i.checked).length} ingredients to order
             </p>
           </div>
         </div>
@@ -173,7 +181,7 @@ export function ShopScreen() {
                       {/* Sponsored badge */}
                       {ingredient.sponsored && (
                         <div className="px-3 py-1.5 bg-purple-500/20 text-purple-400 rounded-xl text-xs">
-                          Sponsorisé
+                          Sponsored
                         </div>
                       )}
 
@@ -184,7 +192,7 @@ export function ShopScreen() {
                           className="ml-auto flex items-center gap-1.5 text-yellow-400 text-xs px-3 py-1.5 bg-yellow-500/10 rounded-xl"
                         >
                           <AlertCircle className="w-3 h-3" />
-                          Meilleur choix dispo
+                          Better option
                         </button>
                       )}
                     </div>
@@ -228,13 +236,13 @@ export function ShopScreen() {
                         onClick={() => setShowSwap(null)}
                         className="flex-1 py-3 bg-white/5 text-white rounded-xl border border-white/10 active:scale-95 transition-transform"
                       >
-                        Non merci
+                        No thanks
                       </button>
                       <button
                         onClick={() => swapIngredient(ingredient.id)}
                         className="flex-1 py-3 bg-emerald-500 text-white rounded-xl active:scale-95 transition-transform"
                       >
-                        Changer
+                        Swap
                       </button>
                     </div>
                   </motion.div>
@@ -255,14 +263,14 @@ export function ShopScreen() {
           <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
               <Leaf className="w-4 h-4 text-emerald-400" />
-              <span className="text-white/50 text-sm">Score Moyen</span>
+              <span className="text-white/50 text-sm">Avg Score</span>
             </div>
             <div className="text-white text-3xl">{avgScore}</div>
           </div>
           <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown className="w-4 h-4 text-blue-400" />
-              <span className="text-white/50 text-sm">CO₂ Économisé</span>
+              <span className="text-white/50 text-sm">CO₂ Saved</span>
             </div>
             <div className="text-white text-3xl">{co2Saved}kg</div>
           </div>
@@ -273,7 +281,7 @@ export function ShopScreen() {
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-6 h-6" />
             <div className="text-left">
-              <div className="text-sm">Commander</div>
+              <div className="text-sm">Order</div>
               <div className="text-xs opacity-60">Carrefour Drive</div>
             </div>
           </div>
