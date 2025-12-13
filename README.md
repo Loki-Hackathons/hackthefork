@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HackTheFork - BeReal for Meals
 
-## Getting Started
+A B2C hackathon MVP for a food sustainability app. Users post photos of their meals, and the app automatically analyzes them to compute vegetal proportion, health, and carbon footprint scores.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 📸 **Photo Upload**: Users can upload meal photos
+- 🤖 **AI Analysis**: CLIP-based zero-shot ingredient detection
+- 📊 **Scoring System**: 
+  - Vegetal Score (0-100): Plant-based proportion
+  - Health Score (0-100): Nutrition heuristic
+  - Carbon Score (0-100): Relative footprint (higher = better)
+- 📱 **Social Feed**: Instagram-style feed with upvotes
+- 📈 **User Stats**: Aggregated statistics per user
+- 🍪 **Cookie-based Identity**: No login required - anonymous user IDs
+
+## Tech Stack
+
+- **Next.js 16** (App Router)
+- **Supabase** (Postgres + Storage)
+- **CLIP** (via @xenova/transformers) for image analysis
+- **TypeScript**
+- **Tailwind CSS**
+- **Framer Motion** (animations)
+
+## Quick Start
+
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+2. **Set up Supabase**:
+   - Create a project at [supabase.com](https://supabase.com)
+   - Run the SQL schema from `supabase/schema.sql`
+   - Create a storage bucket named `meal-images` (public)
+   - Copy your project URL and anon key
+
+3. **Configure environment**:
+   Create `.env.local`:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+4. **Run development server**:
+   ```bash
+   pnpm dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000)
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── posts/route.ts      # Create & fetch posts
+│   │   ├── upvote/route.ts     # Toggle upvotes
+│   │   └── stats/route.ts      # User statistics
+│   └── page.tsx                # Main entry point
+├── components/
+│   ├── CameraScreen.tsx        # Photo capture & analysis
+│   ├── FeedScreen.tsx          # Social feed
+│   ├── ProfileScreen.tsx       # User stats
+│   └── ...
+├── lib/
+│   ├── supabase.ts            # Supabase client
+│   ├── cookies.ts             # User ID management
+│   ├── image-analysis.ts      # CLIP analysis
+│   └── scoring.ts             # Score calculation
+└── services/
+    └── api.ts                  # API client functions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database Schema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **users**: Anonymous user IDs (from cookies)
+- **posts**: Meal posts with scores
+- **ingredients**: Detected ingredients per post
+- **upvotes**: One upvote per user per post
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API Endpoints
 
-## Learn More
+- `POST /api/posts` - Create post (upload + analyze + save)
+- `GET /api/posts` - Fetch feed posts
+- `POST /api/upvote` - Toggle upvote
+- `GET /api/upvote` - Check upvote status
+- `GET /api/stats` - Get user statistics
 
-To learn more about Next.js, take a look at the following resources:
+## Scoring Algorithm
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Vegetal Score
+- Weighted proportion of plant-based ingredients
+- Plant proteins count as 1.2x, animals as 0.5x
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Health Score
+- Base: 60
+- +15 for vegetables/salad
+- +10 for plant proteins
+- -20 for fried foods
+- -5 per animal product
 
-## Deploy on Vercel
+### Carbon Score
+- Base: 80
+- -40 for beef
+- -25 for pork
+- -15 for chicken
+- -10 for fish/dairy
+- +10 for plant proteins
+- +5 for multiple vegetables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Demo Mode
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This is a **demo-first** product:
+- No authentication system
+- Cookie-based anonymous user IDs
+- All RLS policies allow all operations
+- Optimized for clarity and demo impact
+
+## License
+
+MIT

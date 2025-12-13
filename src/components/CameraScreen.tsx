@@ -41,10 +41,10 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
     }, 1500);
   };
 
-  const handlePost = () => {
-    setTimeout(() => {
-      onNavigate('feed');
-    }, 500);
+  const handlePost = async () => {
+    // Post is already created in PostView component via analyzeMeal
+    // Just navigate to feed
+    onNavigate('feed');
   };
 
   const handleReset = () => {

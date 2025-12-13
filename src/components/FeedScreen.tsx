@@ -1,110 +1,74 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Leaf, Apple, Cloud } from 'lucide-react';
 import type { Screen } from './MainApp';
+import { fetchPosts, toggleUpvote, type Post } from '@/services/api';
 
-interface MealScores {
-  vegetal: number;
-  healthy: number;
-  carbon: number;
+// Helper function to format time ago
+function getTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  return `${diffDays}j`;
 }
 
-interface FeedPost {
-  id: number;
-  user: {
-    name: string;
-    username: string;
-    avatar: string;
-  };
-  image: string;
-  dishName: string;
-  scores: MealScores;
-  verified: boolean;
-  likes: number;
-  comments: number;
-  timeAgo: string;
-  isLiked: boolean;
+// Helper function to get user avatar from user_id
+function getUserAvatar(userId: string): string {
+  const avatars = ['👩‍🍳', '👨‍🍳', '👩', '👨', '🧑‍🍳'];
+  // Simple hash to get consistent avatar per user
+  const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return avatars[hash % avatars.length];
 }
-
-const mockPosts: FeedPost[] = [
-  {
-    id: 1,
-    user: {
-      name: 'Sophie',
-      username: '@sophie.m',
-      avatar: '👩‍🍳'
-    },
-    image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob21lbWFkZSUyMGZvb2QlMjBwbGF0ZXxlbnwxfHx8fDE3NjU2NDQwNDh8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    dishName: 'mon curry maison 🍛',
-    scores: { vegetal: 95, healthy: 88, carbon: 92 },
-    verified: true,
-    likes: 847,
-    comments: 23,
-    timeAgo: '2h',
-    isLiked: false
-  },
-  {
-    id: 2,
-    user: {
-      name: 'Marc',
-      username: '@marc.l',
-      avatar: '👨‍🍳'
-    },
-    image: 'https://images.unsplash.com/photo-1510035618584-c442b241abe7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXN1YWwlMjBsdW5jaCUyMGJvd2x8ZW58MXx8fHwxNzY1NjQ0MDQ4fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    dishName: 'buddha bowl du midi',
-    scores: { vegetal: 100, healthy: 92, carbon: 95 },
-    verified: true,
-    likes: 1203,
-    comments: 45,
-    timeAgo: '5h',
-    isLiked: true
-  },
-  {
-    id: 3,
-    user: {
-      name: 'Emma',
-      username: '@emma.r',
-      avatar: '👩'
-    },
-    image: 'https://images.unsplash.com/photo-1553709225-9eb59ce4d215?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaW5uZXIlMjBwbGF0ZSUyMGhvbWV8ZW58MXx8fHwxNzY1NjQ0MDQ5fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    dishName: 'dîner vite fait bien fait',
-    scores: { vegetal: 65, healthy: 72, carbon: 68 },
-    verified: true,
-    likes: 542,
-    comments: 12,
-    timeAgo: '8h',
-    isLiked: false
-  },
-  {
-    id: 4,
-    user: {
-      name: 'Thomas',
-      username: '@thomas.d',
-      avatar: '👨'
-    },
-    image: 'https://images.unsplash.com/photo-1521388825798-fec41108def2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwcGhvdG9ncmFwaHklMjBvdmVyaGVhZHxlbnwxfHx8fDE3NjU2NDQwNTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    dishName: 'petit déj healthy ☀️',
-    scores: { vegetal: 100, healthy: 95, carbon: 98 },
-    verified: true,
-    likes: 2341,
-    comments: 87,
-    timeAgo: '1j',
-    isLiked: true
-  }
-];
 
 export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
-  const [posts, setPosts] = useState(mockPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleLike = (postId: number) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedPosts = await fetchPosts();
+      setPosts(fetchedPosts);
+    } catch (err: any) {
+      console.error('Error loading posts:', err);
+      setError(err.message || 'Failed to load posts. Please check your Supabase configuration.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    try {
+      const upvoted = await toggleUpvote(postId);
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              is_upvoted: upvoted,
+              upvote_count: upvoted 
+                ? (post.upvote_count || 0) + 1 
+                : Math.max(0, (post.upvote_count || 0) - 1)
+            }
+          : post
+      ));
+    } catch (error) {
+      console.error('Error toggling upvote:', error);
+    }
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -113,6 +77,55 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
     const index = Math.round(scrollTop / itemHeight);
     setCurrentIndex(index);
   };
+
+  if (loading) {
+    return (
+      <div className="h-full w-full bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full w-full bg-black flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-xl mb-4">Erreur</div>
+          <div className="text-white/70 text-sm mb-6">{error}</div>
+          <div className="text-white/50 text-xs mb-4">
+            Assurez-vous que:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Les variables d'environnement Supabase sont configurées</li>
+              <li>Le schéma de base de données a été créé</li>
+              <li>Le bucket de stockage "meal-images" existe</li>
+            </ul>
+          </div>
+          <button
+            onClick={loadPosts}
+            className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="h-full w-full bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Aucun post pour le moment</div>
+          <button
+            onClick={() => onNavigate('camera')}
+            className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
+          >
+            Créer le premier post
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -126,6 +139,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
           onLike={handleLike}
           onNavigate={onNavigate}
           isActive={index === currentIndex}
+          isFirst={index === 0}
         />
       ))}
     </div>
@@ -133,17 +147,20 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
 }
 
 interface FeedPostProps {
-  post: FeedPost;
-  onLike: (postId: number) => void;
+  post: Post;
+  onLike: (postId: string) => void;
   onNavigate: (screen: Screen) => void;
   isActive: boolean;
+  isFirst: boolean;
 }
 
-function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
+function FeedPost({ post, onLike, onNavigate, isActive, isFirst }: FeedPostProps) {
   const [showHeart, setShowHeart] = useState(false);
+  const avatar = getUserAvatar(post.user_id);
+  const timeAgo = getTimeAgo(post.created_at);
 
   const handleDoubleTap = () => {
-    if (!post.isLiked) {
+    if (!post.is_upvoted) {
       onLike(post.id);
     }
     setShowHeart(true);
@@ -169,8 +186,8 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src={post.image}
-          alt={post.dishName}
+          src={post.image_url}
+          alt="Meal"
           className="w-full h-full object-cover"
           onDoubleClick={handleDoubleTap}
         />
@@ -202,22 +219,13 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
             className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl border-2 border-white/30 shadow-lg"
             whileHover={{ scale: 1.05 }}
           >
-            {post.user.avatar}
+            {avatar}
           </motion.div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-white font-semibold text-lg drop-shadow-lg">{post.user.name}</span>
-              {post.verified && (
-                <motion.div
-                  className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <span className="text-white text-xs">✓</span>
-                </motion.div>
-              )}
+              <span className="text-white font-semibold text-lg drop-shadow-lg">User {post.user_id.slice(0, 8)}</span>
             </div>
-            <div className="text-white/70 text-sm">{post.timeAgo}</div>
+            <div className="text-white/70 text-sm">{timeAgo}</div>
           </div>
         </div>
         <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-black/60 transition-colors">
@@ -230,21 +238,15 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
         <div className="flex items-end gap-6">
           {/* Left side - Content */}
           <div className="flex-1 pb-2">
-            <h2 className="text-white text-3xl font-bold mb-4 drop-shadow-2xl leading-tight">
-              {post.dishName}
-            </h2>
-
             {/* Three Score Cards - Beautiful Design */}
             <div className="flex flex-wrap gap-3 mb-4">
-              {(['vegetal', 'healthy', 'carbon'] as const).map((type) => {
-                const score = post.scores[type];
+              {([
+                { type: 'vegetal' as const, score: post.vegetal_score, label: 'Végétal' },
+                { type: 'healthy' as const, score: post.health_score, label: 'Santé' },
+                { type: 'carbon' as const, score: post.carbon_score, label: 'Carbone' }
+              ]).map(({ type, score, label }) => {
                 const Icon = getScoreIcon(type);
                 const colorClass = getScoreColor(score);
-                const labels = {
-                  vegetal: 'Végétal',
-                  healthy: 'Santé',
-                  carbon: 'Carbone'
-                };
 
                 return (
                   <motion.div
@@ -257,7 +259,7 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Icon className="w-4 h-4 text-white" />
-                      <span className="text-white/90 text-xs font-medium">{labels[type]}</span>
+                      <span className="text-white/90 text-xs font-medium">{label}</span>
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-white text-2xl font-bold">{score}</span>
@@ -289,21 +291,21 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
             >
               <motion.div
                 className={`w-14 h-14 rounded-full backdrop-blur-md flex items-center justify-center border-2 transition-all ${
-                  post.isLiked 
+                  post.is_upvoted 
                     ? 'bg-red-500/30 border-red-400/50' 
                     : 'bg-black/40 border-white/20'
                 }`}
-                animate={post.isLiked ? { scale: [1, 1.2, 1] } : {}}
+                animate={post.is_upvoted ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
                 <Heart
                   className={`w-7 h-7 transition-all ${
-                    post.isLiked ? 'text-red-500 fill-red-500' : 'text-white'
+                    post.is_upvoted ? 'text-red-500 fill-red-500' : 'text-white'
                   }`}
                 />
               </motion.div>
               <span className="text-white text-sm font-medium drop-shadow-lg">
-                {post.likes > 999 ? `${(post.likes / 1000).toFixed(1)}k` : post.likes}
+                {(post.upvote_count || 0) > 999 ? `${((post.upvote_count || 0) / 1000).toFixed(1)}k` : (post.upvote_count || 0)}
               </span>
             </motion.button>
 
@@ -315,7 +317,7 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
               <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border-2 border-white/20 group-hover:border-white/40 transition-colors">
                 <MessageCircle className="w-7 h-7 text-white" />
               </div>
-              <span className="text-white text-sm font-medium drop-shadow-lg">{post.comments}</span>
+              <span className="text-white text-sm font-medium drop-shadow-lg">0</span>
             </motion.button>
 
             {/* Share */}
@@ -342,7 +344,7 @@ function FeedPost({ post, onLike, onNavigate, isActive }: FeedPostProps) {
       </div>
 
       {/* Scroll indicator */}
-      {post.id === 1 && (
+      {isFirst && (
         <motion.div
           className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10"
           animate={{ y: [0, 12, 0], opacity: [0.5, 1, 0.5] }}
