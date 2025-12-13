@@ -119,6 +119,31 @@ This is a **demo-first** product:
 - All RLS policies allow all operations
 - Optimized for clarity and demo impact
 
+## 🛒 Feature Auchan - Automatisation du Panier
+
+### Description
+Killer feature pour la démo : un bouton "Commander les ingrédients" qui ouvre automatiquement un navigateur, va sur le site Auchan Drive, cherche les produits et les ajoute au panier.
+
+### Architecture
+- **Service Node.js** (`automation-service/`): Service Express avec Playwright pour l'automatisation
+- **Frontend Vite** (`frontend-bastian/`): Frontend React/Vite séparé pour la feature d'automatisation
+- **Composant React** (`frontend-bastian/src/components/CarrefourOrderButton.tsx`): Bouton de déclenchement
+- **Stack**: Playwright, React, Express, Vite
+
+### Utilisation
+1. Démarrer le service d'automatisation : `cd automation-service && npm start`
+2. Démarrer le frontend d'automatisation : `cd frontend-bastian && npm run dev`
+3. Cliquer sur le bouton "COMMANDER LE PANIER" dans l'interface
+4. Le navigateur s'ouvre automatiquement et ajoute les produits au panier Auchan
+
+### Fonctionnalités
+- ✅ Automatisation avec Playwright (mode visible pour la démo)
+- ✅ Gestion de session persistante (évite les CAPTCHAs)
+- ✅ Gestion d'erreurs robuste
+- ✅ Logs détaillés avec timestamps
+- ✅ Optimisations de vitesse (timeouts minimisés)
+- ✅ Navigateur reste ouvert à la fin pour la démo
+
 ## License
 
 MIT
