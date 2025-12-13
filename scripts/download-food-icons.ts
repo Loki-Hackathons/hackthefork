@@ -3,6 +3,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+import type { IncomingMessage } from 'http';
+
 // Ingredients mapping with direct download URLs
 // These are placeholder URLs - replace with actual Flaticon/Icons8 direct links
 const ingredientUrls: Record<string, string> = {
@@ -35,7 +37,7 @@ function downloadFile(url: string, filepath: string): Promise<void> {
     const file = fs.createWriteStream(filepath);
     const protocol = url.startsWith('https') ? https : http;
     
-    protocol.get(url, (response) => {
+    protocol.get(url, (response: IncomingMessage) => {
       if (response.statusCode === 301 || response.statusCode === 302) {
         // Handle redirect
         return downloadFile(response.headers.location!, filepath).then(resolve).catch(reject);
@@ -53,7 +55,7 @@ function downloadFile(url: string, filepath: string): Promise<void> {
         file.close();
         resolve();
       });
-    }).on('error', (err) => {
+    }).on('error', (err: Error) => {
       file.close();
       if (fs.existsSync(filepath)) {
         fs.unlinkSync(filepath);
