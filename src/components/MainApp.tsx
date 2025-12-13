@@ -26,7 +26,11 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
   }, []);
 
   if (!onboardingComplete) {
-    return <TinderOnboarding onComplete={() => setOnboardingComplete(true)} />;
+    return (
+      <div className="h-screen w-screen bg-black overflow-hidden">
+        <TinderOnboarding onComplete={() => setOnboardingComplete(true)} />
+      </div>
+    );
   }
 
   return (
