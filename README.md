@@ -22,15 +22,27 @@ The project is divided into two main parts:
 - `app/services/shopping_service.py`: Logic to convert abstract recipes into specific retailer products.
 
 ### Frontend (`frontend/`)
-- `package.json`: Node dependencies (TypeScript, Vite).
+- `package.json`: Node dependencies (React, TypeScript, Vite, Tailwind CSS, Radix UI).
 - `index.html`: Application HTML entry point.
-- `src/main.ts`: TypeScript entry point, mounts the React app.
+- `vite.config.ts`: Vite configuration with path aliases.
+- `src/main.tsx`: TypeScript entry point, mounts the React app.
+- `src/App.tsx`: Root component with splash screen and main app routing.
+- `src/index.css`: Tailwind CSS v4 styles and global styles.
 - `src/types/index.ts`: Shared TypeScript interfaces (User, Recipe, Post data models).
-- `src/services/api.ts`: Axios/Fetch wrapper for communicating with the Python Backend.
+- `src/services/api.ts`: Fetch wrapper for communicating with the Python Backend.
+- `src/components/`: Main application components:
+  - `SplashScreen.tsx`: Initial splash screen with app branding.
+  - `MainApp.tsx`: Main app container with navigation and screen routing.
+  - `TinderOnboarding.tsx`: Swipe-based recipe discovery/onboarding.
+  - `FeedScreen.tsx`: Social feed (BeReal-style) for sharing meals.
+  - `CameraScreen.tsx`: Camera interface for posting meals.
+  - `ShopScreen.tsx`: Shopping cart and checkout interface.
+  - `ProfileScreen.tsx`: User profile and stats.
+  - `ChallengesScreen.tsx`: Challenges and gamification.
+  - `BottomNav.tsx`: Bottom navigation bar.
+  - `ui/`: Radix UI component library (buttons, dialogs, cards, etc.).
 - `src/features/auth/authService.ts`: Supabase Auth logic wrapper.
 - `src/features/shopping/shoppingService.ts`: Cart management and Checkout logic.
-- `src/features/swipe/SwipeDeck.ts`: Logic/Component for the recipe card stack.
-- `src/features/social/`: Directory reserved for Feed/Camera components.
 
 ## How to split tasks (Team of 4)
 
@@ -65,3 +77,12 @@ The project is divided into two main parts:
    npm install
    npm run dev
    ```
+   
+   The frontend will start on `http://localhost:3000` (or the next available port).
+   
+   **Note**: Make sure you have Node.js 18+ installed. The app uses:
+   - React 18 with TypeScript
+   - Vite 6 for build tooling
+   - Tailwind CSS v4 for styling
+   - Radix UI for accessible components
+   - Motion (Framer Motion) for animations
