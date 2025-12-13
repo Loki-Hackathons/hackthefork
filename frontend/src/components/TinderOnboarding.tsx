@@ -120,7 +120,9 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
         {/* Next card (background) */}
         {currentIndex < dishes.length - 1 && (
           <motion.div
-            className="absolute inset-x-6 inset-y-20 rounded-3xl bg-slate-800"
+            className={`absolute inset-x-6 rounded-3xl bg-slate-800 ${
+              !isRevisit ? 'top-40 bottom-20' : 'inset-y-20'
+            }`}
             initial={{ scale: 0.92, opacity: 0.3 }}
             animate={{ scale: 0.92, opacity: 0.3 }}
           />
@@ -131,6 +133,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
           dish={currentDish}
           onSwipe={handleSwipe}
           key={currentDish.id}
+          isColdStart={!isRevisit}
         />
 
         {/* Particle explosion effect */}
@@ -163,9 +166,10 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
 interface SwipeCardProps {
   dish: typeof dishes[0];
   onSwipe: (direction: 'left' | 'right') => void;
+  isColdStart?: boolean;
 }
 
-function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
+function SwipeCard({ dish, onSwipe, isColdStart = false }: SwipeCardProps) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-20, 20]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
@@ -182,7 +186,9 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       style={{ x, rotate, opacity }}
-      className="absolute inset-x-6 inset-y-20 rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing"
+      className={`absolute inset-x-6 rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing ${
+        isColdStart ? 'top-40 bottom-20' : 'inset-y-20'
+      }`}
       whileTap={{ cursor: 'grabbing' }}
     >
       {/* Image */}

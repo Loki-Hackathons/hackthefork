@@ -18,7 +18,11 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
   const [currentScreen, setCurrentScreen] = useState<Screen>('feed');
 
   if (!onboardingComplete) {
-    return <TinderOnboarding onComplete={() => setOnboardingComplete(true)} />;
+    return (
+      <div className="h-screen w-screen overflow-hidden">
+        <TinderOnboarding onComplete={() => setOnboardingComplete(true)} />
+      </div>
+    );
   }
 
   return (
