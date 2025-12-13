@@ -28,7 +28,7 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
         {currentScreen === 'feed' && <FeedScreen onNavigate={setCurrentScreen} />}
         {currentScreen === 'swipe' && <TinderOnboarding isRevisit={true} onComplete={() => {}} />}
         {currentScreen === 'camera' && <CameraScreen onNavigate={setCurrentScreen} />}
-        {currentScreen === 'shop' && <ShopScreen />}
+        {currentScreen === 'shop' && <ShopScreen onNavigate={setCurrentScreen} />}
         {currentScreen === 'profile' && <ProfileScreen />}
         {currentScreen === 'challenges' && <ChallengesScreen />}
       </div>
