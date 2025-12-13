@@ -112,7 +112,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
               <div
                 key={idx}
                 className={`h-1 rounded-full transition-all ${
-                  idx < currentIndex ? 'w-6 bg-emerald-500' :
+                  idx < currentIndex ? 'w-6 bg-emerald-700' :
                   idx === currentIndex ? 'w-10 bg-emerald-400' :
                   'w-4 bg-white/30'
                 }`}
@@ -344,7 +344,6 @@ function ParticleExplosion({ ingredients }: ParticleExplosionProps) {
           </div>
         </motion.div>
       ))}
-
     </div>
   );
 }

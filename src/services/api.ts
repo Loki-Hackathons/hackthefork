@@ -1,6 +1,9 @@
+import { getUserId } from '@/lib/cookies';
+
 export interface Ingredient {
   name: string;
   confidence: number;
+  category?: 'plant' | 'plant_protein' | 'animal';
 }
 
 export interface MealScore {
@@ -26,48 +29,28 @@ export interface MealAnalysisResult {
   recommendations: Recommendation[];
 }
 
-export interface MealAnalysisResponse {
-  ingredients: Ingredient[];
-  note: string;
+export interface Post {
+  id: string;
+  user_id: string;
+  image_url: string;
+  vegetal_score: number;
+  health_score: number;
+  carbon_score: number;
+  created_at: string;
+  ingredients?: Ingredient[];
+  upvote_count?: number;
+  is_upvoted?: boolean;
 }
 
-// Mock scoring logic
-export function calculateScores(ingredients: Ingredient[]): MealScore {
-  const ingredientNames = ingredients.map(i => i.name.toLowerCase());
-  
-  // Vegetal score: higher if more plant-based ingredients
-  const plantBased = ['tofu', 'lentils', 'beans', 'chickpeas', 'rice', 'pasta', 'bread', 'salad', 'vegetables'];
-  const animalBased = ['beef', 'chicken', 'pork', 'fish', 'egg', 'cheese', 'milk', 'yogurt'];
-  
-  const plantCount = ingredientNames.filter(name => 
-    plantBased.some(plant => name.includes(plant))
-  ).length;
-  const animalCount = ingredientNames.filter(name => 
-    animalBased.some(animal => name.includes(animal))
-  ).length;
-  
-  const vegetal = Math.min(100, Math.round((plantCount / (plantCount + animalCount + 1)) * 100));
-  
-  // Healthy score: based on ingredients
-  let healthy = 70; // base
-  if (ingredientNames.some(n => n.includes('salad') || n.includes('vegetables'))) healthy += 15;
-  if (ingredientNames.some(n => n.includes('fries'))) healthy -= 20;
-  if (ingredientNames.some(n => n.includes('beef') || n.includes('pork'))) healthy -= 10;
-  healthy = Math.max(0, Math.min(100, healthy));
-  
-  // Carbon score: lower footprint = higher score
-  let carbon = 80; // base
-  if (ingredientNames.some(n => n.includes('beef'))) carbon -= 40;
-  if (ingredientNames.some(n => n.includes('pork') || n.includes('chicken'))) carbon -= 20;
-  if (ingredientNames.some(n => n.includes('fish'))) carbon -= 10;
-  if (ingredientNames.some(n => n.includes('cheese') || n.includes('milk'))) carbon -= 15;
-  if (ingredientNames.some(n => n.includes('tofu') || n.includes('lentils') || n.includes('beans'))) carbon += 10;
-  carbon = Math.max(0, Math.min(100, carbon));
-  
-  return { vegetal, healthy, carbon };
+export interface UserStats {
+  post_count: number;
+  avg_vegetal_score: number;
+  avg_health_score: number;
+  avg_carbon_score: number;
+  total_co2_avoided: number;
 }
 
-// Mock recommendations
+// Generate recommendations based on scores
 export function generateRecommendations(ingredients: Ingredient[], scores: MealScore): Recommendation[] {
   const recommendations: Recommendation[] = [];
   const ingredientNames = ingredients.map(i => i.name.toLowerCase());
@@ -112,13 +95,15 @@ export function generateRecommendations(ingredients: Ingredient[], scores: MealS
   return recommendations.slice(0, 3);
 }
 
-// API call to backend
+// API call to analyze meal and create post
 export async function analyzeMeal(imageFile: File): Promise<MealAnalysisResult> {
+  const userId = getUserId();
   const formData = new FormData();
   formData.append('image', imageFile);
+  formData.append('user_id', userId);
   
   try {
-    const response = await fetch('http://localhost:8000/analyze-meal', {
+    const response = await fetch('/api/posts', {
       method: 'POST',
       body: formData,
     });
@@ -127,32 +112,105 @@ export async function analyzeMeal(imageFile: File): Promise<MealAnalysisResult> 
       throw new Error('Analysis failed');
     }
     
-    const data: MealAnalysisResponse = await response.json();
+    const data = await response.json();
+    const post = data.post;
     
-    // Calculate scores and recommendations
-    const scores = calculateScores(data.ingredients);
-    const recommendations = generateRecommendations(data.ingredients, scores);
+    // Map to MealAnalysisResult
+    const scores: MealScore = {
+      vegetal: post.vegetal_score,
+      healthy: post.health_score,
+      carbon: post.carbon_score
+    };
+    
+    const ingredients: Ingredient[] = post.ingredients || [];
+    const recommendations = generateRecommendations(ingredients, scores);
     
     return {
-      ingredients: data.ingredients,
+      ingredients,
       scores,
       recommendations,
     };
   } catch (error) {
-    // Fallback to mock data for demo
-    const mockIngredients: Ingredient[] = [
-      { name: 'chicken', confidence: 0.85 },
-      { name: 'rice', confidence: 0.72 },
-      { name: 'vegetables', confidence: 0.65 },
-    ];
+    console.error('Error analyzing meal:', error);
+    throw error;
+  }
+}
+
+// Fetch feed posts
+export async function fetchPosts(): Promise<Post[]> {
+  try {
+    const response = await fetch('/api/posts');
     
-    const scores = calculateScores(mockIngredients);
-    const recommendations = generateRecommendations(mockIngredients, scores);
+    if (!response.ok) {
+      throw new Error('Failed to fetch posts');
+    }
     
+    const data = await response.json();
+    const userId = getUserId();
+    
+    // Check which posts are upvoted by current user
+    const postsWithUpvotes = await Promise.all(
+      data.posts.map(async (post: Post) => {
+        const upvoteResponse = await fetch(
+          `/api/upvote?post_id=${post.id}&user_id=${userId}`
+        );
+        const { upvoted } = await upvoteResponse.json();
+        return { ...post, is_upvoted: upvoted || false };
+      })
+    );
+    
+    return postsWithUpvotes;
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
+}
+
+// Toggle upvote
+export async function toggleUpvote(postId: string): Promise<boolean> {
+  const userId = getUserId();
+  
+  try {
+    const response = await fetch('/api/upvote', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ post_id: postId, user_id: userId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to toggle upvote');
+    }
+    
+    const data = await response.json();
+    return data.upvoted;
+  } catch (error) {
+    console.error('Error toggling upvote:', error);
+    throw error;
+  }
+}
+
+// Fetch user stats
+export async function fetchUserStats(): Promise<UserStats> {
+  const userId = getUserId();
+  
+  try {
+    const response = await fetch(`/api/stats?user_id=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch stats');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching stats:', error);
     return {
-      ingredients: mockIngredients,
-      scores,
-      recommendations,
+      post_count: 0,
+      avg_vegetal_score: 0,
+      avg_health_score: 0,
+      avg_carbon_score: 0,
+      total_co2_avoided: 0
     };
   }
 }

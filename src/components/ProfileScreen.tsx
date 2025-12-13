@@ -1,27 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Trophy, TrendingUp, Settings, Leaf, Flame, Users } from 'lucide-react';
-
-const mockProfile = {
-  name: 'Sophie',
-  username: '@sophie.m',
-  avatar: '👩‍🍳',
-  title: 'Maître du Végétal',
-  stats: {
-    healthy: 85,
-    local: 72,
-    vege: 90,
-    season: 78
-  },
-  totalScore: 81,
-  weeklyProgress: +12,
-  posts: 47,
-  followers: 1284,
-  following: 892,
-  savedCO2: 28.5
-};
+import { fetchUserStats, type UserStats } from '@/services/api';
+import { getUserId } from '@/lib/cookies';
 
 const mockHistory = [
   { id: 1, score: 95, image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?w=400' },
@@ -45,7 +28,38 @@ const mockLeaderboard = [
 export function ProfileScreen() {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const startPos = useRef({ x: 0, y: 0 });
+  const userId = getUserId();
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    try {
+      const userStats = await fetchUserStats();
+      setStats(userStats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper to get avatar from user_id
+  const getAvatar = (id: string) => {
+    const avatars = ['👩‍🍳', '👨‍🍳', '👩', '👨', '🧑‍🍳'];
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return avatars[hash % avatars.length];
+  };
+
+  const avatar = getAvatar(userId);
+  const totalScore = stats 
+    ? Math.round((stats.avg_vegetal_score + stats.avg_health_score + stats.avg_carbon_score) / 3)
+    : 0;
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
@@ -75,6 +89,14 @@ export function ProfileScreen() {
     setIsDragging(false);
   };
 
+  if (loading) {
+    return (
+      <div className="h-full bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Chargement...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-black overflow-y-auto pb-24">
       {/* Header */}
@@ -82,14 +104,14 @@ export function ProfileScreen() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10">
-              {mockProfile.avatar}
+              {avatar}
             </div>
             <div>
               <h1 className="text-white text-2xl">
-                {mockProfile.name}
+                Mon Profil
               </h1>
               <div className="text-white/50 text-sm">
-                {mockProfile.username}
+                {userId.slice(0, 8)}...
               </div>
             </div>
           </div>
@@ -102,21 +124,21 @@ export function ProfileScreen() {
         <div className="flex items-center justify-around mb-6">
           <div className="text-center">
             <div className="text-white text-2xl mb-1">
-              {mockProfile.posts}
+              {stats?.post_count || 0}
             </div>
             <div className="text-white/50 text-sm">posts</div>
           </div>
           <div className="text-center">
             <div className="text-white text-2xl mb-1">
-              {mockProfile.followers > 999 ? `${(mockProfile.followers / 1000).toFixed(1)}k` : mockProfile.followers}
+              {stats?.avg_vegetal_score || 0}
             </div>
-            <div className="text-white/50 text-sm">followers</div>
+            <div className="text-white/50 text-sm">végétal</div>
           </div>
           <div className="text-center">
             <div className="text-white text-2xl mb-1">
-              {mockProfile.following}
+              {stats?.avg_carbon_score || 0}
             </div>
-            <div className="text-white/50 text-sm">following</div>
+            <div className="text-white/50 text-sm">carbone</div>
           </div>
         </div>
 
@@ -124,11 +146,11 @@ export function ProfileScreen() {
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-400">{mockProfile.title}</span>
+            <span className="text-yellow-400">Score moyen: {totalScore}/100</span>
           </div>
           <div className="flex items-center gap-2 text-white/70">
             <Flame className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm">{mockProfile.savedCO2}kg de CO₂ économisés</span>
+            <span className="text-sm">{stats?.total_co2_avoided || 0}kg de CO₂ économisés</span>
           </div>
         </div>
 
@@ -178,10 +200,10 @@ export function ProfileScreen() {
             >
               {/* Axes */}
               {[
-                { angle: 0, label: 'Healthy', value: mockProfile.stats.healthy, color: '#10b981' },
-                { angle: 90, label: 'Local', value: mockProfile.stats.local, color: '#3b82f6' },
-                { angle: 180, label: 'Végé', value: mockProfile.stats.vege, color: '#8b5cf6' },
-                { angle: 270, label: 'Saison', value: mockProfile.stats.season, color: '#f59e0b' },
+                { angle: 0, label: 'Santé', value: stats?.avg_health_score || 0, color: '#10b981' },
+                { angle: 90, label: 'Carbone', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
+                { angle: 180, label: 'Végétal', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
+                { angle: 270, label: 'Moyenne', value: totalScore, color: '#f59e0b' },
               ].map((axis, idx) => {
                 const rad = (axis.angle * Math.PI) / 180;
                 const maxRadius = 80;
@@ -235,10 +257,10 @@ export function ProfileScreen() {
               {/* Filled shape */}
               <motion.path
                 d={`
-                  M ${100 + (mockProfile.stats.healthy / 100) * 80 * Math.cos(0)} ${100 + (mockProfile.stats.healthy / 100) * 80 * Math.sin(0)}
-                  L ${100 + (mockProfile.stats.local / 100) * 80 * Math.cos(Math.PI / 2)} ${100 + (mockProfile.stats.local / 100) * 80 * Math.sin(Math.PI / 2)}
-                  L ${100 + (mockProfile.stats.vege / 100) * 80 * Math.cos(Math.PI)} ${100 + (mockProfile.stats.vege / 100) * 80 * Math.sin(Math.PI)}
-                  L ${100 + (mockProfile.stats.season / 100) * 80 * Math.cos(3 * Math.PI / 2)} ${100 + (mockProfile.stats.season / 100) * 80 * Math.sin(3 * Math.PI / 2)}
+                  M ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.cos(0)} ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.sin(0)}
+                  L ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.cos(Math.PI / 2)} ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.sin(Math.PI / 2)}
+                  L ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.cos(Math.PI)} ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.sin(Math.PI)}
+                  L ${100 + (totalScore / 100) * 80 * Math.cos(3 * Math.PI / 2)} ${100 + (totalScore / 100) * 80 * Math.sin(3 * Math.PI / 2)}
                   Z
                 `}
                 fill="url(#gradient)"
@@ -268,7 +290,7 @@ export function ProfileScreen() {
                 textAnchor="middle"
                 dominantBaseline="middle"
               >
-                {mockProfile.totalScore}
+                {totalScore}
               </text>
               <text
                 x="100"
@@ -289,81 +311,32 @@ export function ProfileScreen() {
         </div>
       </div>
 
-      {/* Leaderboard */}
+      {/* Stats Summary */}
       <div className="px-6 pb-6">
         <h2 className="text-white text-xl mb-4 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-400" />
-          Top de la semaine
+          <Leaf className="w-5 h-5 text-emerald-400" />
+          Statistiques
         </h2>
 
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10">
-          {mockLeaderboard.map((entry) => (
-            <div
-              key={entry.rank}
-              className={`flex items-center gap-4 p-4 border-b border-white/10 last:border-b-0 ${
-                entry.isMe ? 'bg-emerald-500/10' : ''
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                entry.rank === 1 ? 'bg-yellow-500 text-black' :
-                entry.rank === 2 ? 'bg-slate-400 text-black' :
-                entry.rank === 3 ? 'bg-orange-500 text-white' :
-                'bg-white/10 text-white/50'
-              }`}>
-                {entry.rank}
-              </div>
-              
-              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl">
-                {entry.avatar}
-              </div>
-              
-              <div className="flex-1">
-                <div className={`${entry.isMe ? 'text-emerald-400' : 'text-white'}`}>
-                  {entry.name}
-                </div>
-                <div className="text-white/40 text-sm">{entry.username}</div>
-              </div>
-              
-              <div className="text-white text-xl">
-                {entry.score}
-              </div>
-              
-              {entry.isMe && (
-                <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  +{mockProfile.weeklyProgress}
-                </div>
-              )}
+        <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score végétal moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_vegetal_score || 0}/100</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score santé moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_health_score || 0}/100</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Score carbone moyen</span>
+            <span className="text-white text-xl font-bold">{stats?.avg_carbon_score || 0}/100</span>
+          </div>
+          <div className="pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Total CO₂ économisé</span>
+              <span className="text-emerald-400 text-xl font-bold">{stats?.total_co2_avoided || 0}kg</span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Grid posts - Instagram style */}
-      <div className="px-6 pb-6">
-        <h2 className="text-white text-xl mb-4">
-          Tes plats
-        </h2>
-        
-        <div className="grid grid-cols-3 gap-1">
-          {mockHistory.map((post) => (
-            <motion.div
-              key={post.id}
-              className="relative aspect-square overflow-hidden"
-              whileTap={{ scale: 0.95 }}
-            >
-              <img
-                src={post.image}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Score overlay */}
-              <div className="absolute top-2 right-2 w-10 h-10 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-lg">
-                <span className="text-white text-sm">{post.score}</span>
-              </div>
-            </motion.div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
