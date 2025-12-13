@@ -44,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project docs and assets (local only, not pushed to repo)
+Docs_Projet/
+Maquette_Figma/
