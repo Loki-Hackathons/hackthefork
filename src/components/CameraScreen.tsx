@@ -176,7 +176,7 @@ function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraVie
             className="flex flex-col items-center gap-3"
             whileTap={{ scale: 0.9 }}
           >
-            <div className="w-20 h-20 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg">
+            <div className="w-20 h-20 rounded-2xl bg-emerald-700 flex items-center justify-center shadow-lg">
               <Sparkles className="w-10 h-10 text-white" />
             </div>
             <span className="text-emerald-400 text-sm font-medium">Galerie</span>
@@ -273,7 +273,7 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
             <AnimatePresence>
               {showSuggestion && (
                 <motion.div
-                  className="bg-emerald-500 rounded-3xl p-6 shadow-2xl border border-emerald-400/30"
+                  className="bg-emerald-700 rounded-3xl p-6 shadow-2xl border border-emerald-500/30"
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -341,7 +341,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
   }, [imageFile]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-emerald-500';
+    if (score >= 80) return 'bg-emerald-700';
     if (score >= 60) return 'bg-yellow-500';
     return 'bg-red-500';
   };
@@ -356,7 +356,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
 
   return (
     <motion.div
-      className="h-full flex flex-col bg-black overflow-y-auto"
+      className="h-full flex flex-col bg-black overflow-y-auto relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -372,6 +372,35 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         <h2 className="text-white text-xl font-semibold">Nouveau post</h2>
         <div className="w-12" />
       </div>
+
+      {/* Small Score Container - Left Side */}
+      {!isCalculating && analysisResult && (
+        <div className="absolute left-6 top-40 z-20">
+          {(() => {
+            const avgScore = Math.round(
+              (analysisResult.scores.vegetal + analysisResult.scores.healthy + analysisResult.scores.carbon) / 3
+            );
+            const colorClass = getScoreColor(avgScore);
+            
+            return (
+              <motion.div
+                className={`${colorClass} rounded-xl px-3 py-2 shadow-xl backdrop-blur-sm border border-white/20`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-white text-lg font-bold">{avgScore}</span>
+                    <span className="text-white/70 text-xs">/100</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Image preview */}
       <div className="aspect-square w-full mb-6 relative">
@@ -410,38 +439,6 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
               transition={{ type: "spring", stiffness: 200 }}
               className="space-y-6"
             >
-              {/* Three Score Cards */}
-              <div className="grid grid-cols-3 gap-3">
-                {(['vegetal', 'healthy', 'carbon'] as const).map((type) => {
-                  const score = analysisResult.scores[type];
-                  const Icon = getScoreIcon(type);
-                  const colorClass = getScoreColor(score);
-                  const labels = {
-                    vegetal: 'Végétal',
-                    healthy: 'Santé',
-                    carbon: 'Carbone'
-                  };
-
-                  return (
-                    <motion.div
-                      key={type}
-                      className={`${colorClass} rounded-2xl p-4 shadow-xl border border-white/20`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * (type === 'vegetal' ? 0 : type === 'healthy' ? 1 : 2) }}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon className="w-5 h-5 text-white" />
-                        <span className="text-white/90 text-xs font-medium">{labels[type]}</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-white text-3xl font-bold">{score}</span>
-                        <span className="text-white/70 text-xs">/100</span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
 
               {/* Recommendations */}
               {analysisResult.recommendations.length > 0 && (

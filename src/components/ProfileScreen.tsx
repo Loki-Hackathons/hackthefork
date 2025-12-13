@@ -81,7 +81,7 @@ export function ProfileScreen() {
       <div className="pt-12 pb-6 px-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10">
+            <div className="w-20 h-20 rounded-full bg-emerald-700 flex items-center justify-center text-4xl border-4 border-white/10">
               {mockProfile.avatar}
             </div>
             <div>
@@ -313,7 +313,7 @@ export function ProfileScreen() {
                 {entry.rank}
               </div>
               
-              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-full bg-emerald-700 flex items-center justify-center text-2xl">
                 {entry.avatar}
               </div>
               
@@ -359,7 +359,7 @@ export function ProfileScreen() {
               />
               
               {/* Score overlay */}
-              <div className="absolute top-2 right-2 w-10 h-10 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-lg">
+              <div className="absolute top-2 right-2 w-10 h-10 rounded-full bg-emerald-700 border-2 border-white flex items-center justify-center shadow-lg">
                 <span className="text-white text-sm">{post.score}</span>
               </div>
             </motion.div>

@@ -147,7 +147,7 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
                   >
                     <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${
                       ingredient.checked 
-                        ? 'bg-emerald-500 border-emerald-500' 
+                        ? 'bg-emerald-700 border-emerald-600' 
                         : 'border-white/30'
                     }`}>
                       {ingredient.checked && (
@@ -170,7 +170,7 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Score badge */}
                       <div className={`px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 ${
-                        ingredient.score >= 85 ? 'bg-emerald-500/20 text-emerald-400' :
+                        ingredient.score >= 85 ? 'bg-emerald-700/20 text-emerald-500' :
                         ingredient.score >= 70 ? 'bg-yellow-500/20 text-yellow-400' :
                         'bg-orange-500/20 text-orange-400'
                       }`}>
@@ -240,7 +240,7 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
                       </button>
                       <button
                         onClick={() => swapIngredient(ingredient.id)}
-                        className="flex-1 py-3 bg-emerald-500 text-white rounded-xl active:scale-95 transition-transform"
+                        className="flex-1 py-3 bg-emerald-700 text-white rounded-xl active:scale-95 transition-transform"
                       >
                         Swap
                       </button>
