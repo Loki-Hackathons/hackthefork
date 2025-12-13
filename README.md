@@ -1,88 +1,36 @@
-# HackTheFork - Project Skeleton
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Project Structure
+## Getting Started
 
-The project is divided into two main parts:
-- `backend/`: Python FastAPI application (Logic, AI, Scoring).
-- `frontend/`: TypeScript/Vite WebApp (UI generated via Figma, Logic).
+First, run the development server:
 
-## File Guide (Detailed)
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-### Backend (`backend/`)
-- `requirements.txt`: Python dependencies list (FastAPI, Supabase, etc.).
-- `app/main.py`: Application entry point, aggregates all API routers.
-- `app/core/config.py`: Environment configuration (Supabase URL/Key, Project settings).
-- `app/api/v1/auth.py`: Authentication endpoints (Login/Register wrapper).
-- `app/api/v1/feed.py`: "BeReal" feature endpoints (Get feed, Post photo).
-- `app/api/v1/recipes.py`: "Tinder" feature endpoints (Get recommendations, Swipe action).
-- `app/api/v1/shopping.py`: "Jow" feature endpoints (Add recipe to cart, Checkout).
-- `app/api/v1/users.py`: User profile and leaderboard endpoints.
-- `app/services/recommendation_service.py`: Logic for the recipe recommendation algorithm.
-- `app/services/scoring_service.py`: Logic for calculating Eco/Healthy scores (Image + Product data).
-- `app/services/shopping_service.py`: Logic to convert abstract recipes into specific retailer products.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Frontend (`frontend/`)
-- `package.json`: Node dependencies (React, TypeScript, Vite, Tailwind CSS, Radix UI).
-- `index.html`: Application HTML entry point.
-- `vite.config.ts`: Vite configuration with path aliases.
-- `src/main.tsx`: TypeScript entry point, mounts the React app.
-- `src/App.tsx`: Root component with splash screen and main app routing.
-- `src/index.css`: Tailwind CSS v4 styles and global styles.
-- `src/types/index.ts`: Shared TypeScript interfaces (User, Recipe, Post data models).
-- `src/services/api.ts`: Fetch wrapper for communicating with the Python Backend.
-- `src/components/`: Main application components:
-  - `SplashScreen.tsx`: Initial splash screen with app branding.
-  - `MainApp.tsx`: Main app container with navigation and screen routing.
-  - `TinderOnboarding.tsx`: Swipe-based recipe discovery/onboarding.
-  - `FeedScreen.tsx`: Social feed (BeReal-style) for sharing meals.
-  - `CameraScreen.tsx`: Camera interface for posting meals.
-  - `ShopScreen.tsx`: Shopping cart and checkout interface.
-  - `ProfileScreen.tsx`: User profile and stats.
-  - `ChallengesScreen.tsx`: Challenges and gamification.
-  - `BottomNav.tsx`: Bottom navigation bar.
-  - `ui/`: Radix UI component library (buttons, dialogs, cards, etc.).
-- `src/features/auth/authService.ts`: Supabase Auth logic wrapper.
-- `src/features/shopping/shoppingService.ts`: Cart management and Checkout logic.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## How to split tasks (Team of 4)
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-### Developer 1: The "Tinder" Mechanic (Frontend + API)
-- **Focus**: `frontend/src/features/swipe/` and `backend/app/api/v1/recipes.py`
-- **Goal**: Build the swipe UI and the recommendation algorithm connection.
+## Learn More
 
-### Developer 2: Social & Feed (Frontend + API)
-- **Focus**: `frontend/src/features/social/` and `backend/app/api/v1/feed.py`
-- **Goal**: Build the "BeReal" style feed, photo uploading, and display.
+To learn more about Next.js, take a look at the following resources:
 
-### Developer 3: Shopping & Jow Integration (Frontend + API)
-- **Focus**: `frontend/src/features/shopping/` and `backend/app/api/v1/shopping.py`
-- **Goal**: Handle the cart logic and the "Recipe to Products" conversion.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Developer 4: Core, Auth & Scoring Engine (Backend Focus)
-- **Focus**: `backend/app/services/scoring_service.py`, `backend/app/core/`, and Auth setup.
-- **Goal**: Implement the "Healthy/Eco" scoring algorithm and manage database models/Supabase config.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Setup
+## Deploy on Vercel
 
-1. **Backend**:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload
-   ```
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-2. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   
-   The frontend will start on `http://localhost:3000` (or the next available port).
-   
-   **Note**: Make sure you have Node.js 18+ installed. The app uses:
-   - React 18 with TypeScript
-   - Vite 6 for build tooling
-   - Tailwind CSS v4 for styling
-   - Radix UI for accessible components
-   - Motion (Framer Motion) for animations
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
