@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Scan, X, Sparkles, Flame, Check } from 'lucide-react';
+import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight } from 'lucide-react';
 import type { Screen } from './MainApp';
+import { analyzeMeal, type MealAnalysisResult } from '@/services/api';
 
 interface CameraScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -11,14 +12,26 @@ interface CameraScreenProps {
 
 export function CameraScreen({ onNavigate }: CameraScreenProps) {
   const [mode, setMode] = useState<'camera' | 'scan' | 'post'>('camera');
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scannedItems, setScannedItems] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCapturedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+        setMode('post');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCapture = () => {
-    // Simulate capture
-    setCapturedImage('https://images.unsplash.com/photo-1693042978560-5711db96a991?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob21lbWFkZSUyMGZvb2QlMjBwbGF0ZXxlbnwxfHx8fDE3NjU2NDQwNDh8MA&ixlib=rb-4.1.0&q=80&w=1080');
-    setMode('post');
+    fileInputRef.current?.click();
   };
 
   const handleScan = () => {
@@ -36,6 +49,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
 
   const handleReset = () => {
     setMode('camera');
+    setCapturedFile(null);
     setCapturedImage(null);
     setScannedItems([]);
   };
@@ -49,6 +63,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
             onCapture={handleCapture}
             onScan={handleScan}
             fileInputRef={fileInputRef}
+            onFileSelect={handleFileSelect}
           />
         )}
 
@@ -61,10 +76,11 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
           />
         )}
 
-        {mode === 'post' && (
+        {mode === 'post' && capturedFile && capturedImage && (
           <PostView
             key="post"
-            image={capturedImage!}
+            imageFile={capturedFile}
+            imageUrl={capturedImage}
             onPost={handlePost}
             onCancel={handleReset}
           />
@@ -77,10 +93,11 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
 interface CameraViewProps {
   onCapture: () => void;
   onScan: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function CameraView({ onCapture, onScan, fileInputRef }: CameraViewProps) {
+function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraViewProps) {
   return (
     <motion.div
       className="h-full flex flex-col"
@@ -89,19 +106,19 @@ function CameraView({ onCapture, onScan, fileInputRef }: CameraViewProps) {
       exit={{ opacity: 0 }}
     >
       {/* Camera viewfinder */}
-      <div className="flex-1 relative bg-slate-900 flex items-center justify-center overflow-hidden">
+      <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
         {/* Grid overlay */}
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-30">
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-20">
           {[...Array(9)].map((_, i) => (
-            <div key={i} className="border border-white/20" />
+            <div key={i} className="border border-white/10" />
           ))}
         </div>
 
         {/* Center focus */}
         <motion.div
-          className="w-56 h-56 border-2 border-white/50 rounded-3xl"
+          className="w-64 h-64 border-2 border-white/40 rounded-3xl"
           animate={{
-            opacity: [0.3, 0.8, 0.3],
+            opacity: [0.2, 0.6, 0.2],
             scale: [1, 1.05, 1]
           }}
           transition={{
@@ -111,60 +128,66 @@ function CameraView({ onCapture, onScan, fileInputRef }: CameraViewProps) {
           }}
         />
 
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-          <Camera className="w-20 h-20 text-white/40 mx-auto mb-4" />
-          <p className="text-white/60 text-xl">Prends ton plat en photo</p>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none z-10">
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Camera className="w-24 h-24 text-white/50 mx-auto mb-6" />
+          </motion.div>
+          <p className="text-white/70 text-xl font-medium">Prends ton plat en photo</p>
+          <p className="text-white/40 text-sm mt-2">On calcule ton impact écolo</p>
         </div>
       </div>
 
       {/* Bottom controls - BeReal style */}
-      <div className="p-6 bg-black">
-        <div className="flex items-center justify-between max-w-md mx-auto mb-4">
+      <div className="p-8 bg-black/95 backdrop-blur-lg border-t border-white/10">
+        <div className="flex items-center justify-between max-w-md mx-auto">
           {/* Scan button */}
-          <button
+          <motion.button
             onClick={onScan}
-            className="flex flex-col items-center gap-2"
+            className="flex flex-col items-center gap-3"
+            whileTap={{ scale: 0.9 }}
           >
-            <motion.div 
-              className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Scan className="w-8 h-8 text-white" />
-            </motion.div>
-            <span className="text-purple-400 text-sm">Scan</span>
-          </button>
+            <div className="w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg">
+              <Scan className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-purple-400 text-sm font-medium">Scan</span>
+          </motion.button>
 
           {/* Capture button - centered */}
           <motion.button
             onClick={onCapture}
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.85 }}
             className="relative"
           >
-            <div className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-white" />
+            <div className="w-24 h-24 rounded-full border-4 border-white/80 flex items-center justify-center shadow-2xl">
+              <motion.div 
+                className="w-20 h-20 rounded-full bg-white"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
             </div>
           </motion.button>
 
-          {/* Post directly */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center gap-2"
+          {/* Gallery button */}
+          <motion.button
+            onClick={onCapture}
+            className="flex flex-col items-center gap-3"
+            whileTap={{ scale: 0.9 }}
           >
-            <motion.div 
-              className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Sparkles className="w-8 h-8 text-white" />
-            </motion.div>
-            <span className="text-emerald-400 text-sm">Post</span>
-          </button>
+            <div className="w-20 h-20 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-emerald-400 text-sm font-medium">Galerie</span>
+          </motion.button>
 
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={onCapture}
+            onChange={onFileSelect}
           />
         </div>
       </div>
@@ -190,12 +213,16 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
     >
       {/* Header */}
       <div className="pt-12 pb-6 px-6">
-        <button onClick={onBack} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4">
+        <button 
+          onClick={onBack} 
+          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-6 hover:bg-white/20 transition-colors"
+        >
           <X className="w-6 h-6 text-white" />
         </button>
-        <h2 className="text-white text-3xl">
+        <h2 className="text-white text-4xl font-bold">
           Scan de ton plat
         </h2>
+        <p className="text-white/60 text-sm mt-2">Détection des ingrédients en cours...</p>
       </div>
 
       {/* Scanning animation */}
@@ -203,11 +230,12 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <motion.div
-              className="w-28 h-28 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-6"
+              className="w-32 h-32 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-8"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
-            <p className="text-white/70 text-lg">Détection en cours...</p>
+            <p className="text-white/80 text-xl font-medium">Détection en cours...</p>
+            <p className="text-white/50 text-sm mt-2">Analyse de l'image avec IA</p>
           </div>
         </div>
       ) : (
@@ -217,23 +245,23 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
             animate={{ opacity: 1, y: 0 }}
             onAnimationComplete={() => setTimeout(() => setShowSuggestion(true), 500)}
           >
-            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-5 mb-6 border border-white/10">
-              <h3 className="text-purple-400 mb-4 text-lg">
+            <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 mb-6 border border-white/10">
+              <h3 className="text-purple-400 mb-4 text-lg font-semibold">
                 Ingrédients détectés
               </h3>
               <div className="space-y-3">
                 {scannedItems.map((item, idx) => (
                   <motion.div
                     key={idx}
-                    className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl"
+                    className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.1 }}
                   >
-                    <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                    <div className="w-3 h-3 bg-purple-400 rounded-full" />
                     <span className="text-white flex-1 text-lg">{item}</span>
                     {idx === 0 && (
-                      <span className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-full text-sm">
+                      <span className="px-4 py-2 bg-red-500/20 text-red-400 rounded-full text-sm font-medium border border-red-500/30">
                         Score: 40
                       </span>
                     )}
@@ -245,33 +273,39 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
             <AnimatePresence>
               {showSuggestion && (
                 <motion.div
-                  className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-3xl p-6 shadow-2xl"
+                  className="bg-emerald-500 rounded-3xl p-6 shadow-2xl border border-emerald-400/30"
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 20 }}
                 >
                   <div className="flex items-start gap-4 mb-6">
-                    <Sparkles className="w-7 h-7 text-white flex-shrink-0 mt-1" />
+                    <Sparkles className="w-8 h-8 text-white flex-shrink-0 mt-1" />
                     <div className="flex-1">
-                      <h3 className="text-white text-xl mb-3">
+                      <h3 className="text-white text-2xl font-bold mb-3">
                         Suggestion IA
                       </h3>
-                      <p className="text-white/90 text-lg leading-relaxed">
-                        Remplace le <span className="font-semibold">Steak de bœuf</span> par du{' '}
-                        <span className="font-semibold">Seitan</span>
+                      <p className="text-white/95 text-lg leading-relaxed mb-4">
+                        Remplace le <span className="font-bold">Steak de bœuf</span> par du{' '}
+                        <span className="font-bold">Seitan</span>
                       </p>
-                      <div className="flex items-center gap-3 mt-4">
-                        <span className="text-white/70 line-through text-2xl">40</span>
-                        <span className="text-white text-3xl">→ 90</span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-white/70 line-through text-3xl font-bold">40</span>
+                          <ArrowRight className="w-6 h-6 text-white/70" />
+                          <span className="text-white text-4xl font-bold">90</span>
+                        </div>
+                        <span className="text-white/80 text-sm">+50 points</span>
                       </div>
                     </div>
                   </div>
-                  <button
+                  <motion.button
                     onClick={onShop}
-                    className="w-full py-4 bg-white text-emerald-600 rounded-2xl text-lg active:scale-95 transition-transform"
+                    className="w-full py-4 bg-white text-emerald-600 rounded-2xl text-lg font-semibold active:scale-95 transition-transform shadow-xl"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    Voir l'alternative
-                  </button>
+                    Voir l'alternative Carrefour
+                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -283,107 +317,184 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
 }
 
 interface PostViewProps {
-  image: string;
+  imageFile: File;
+  imageUrl: string;
   onPost: () => void;
   onCancel: () => void;
 }
 
-function PostView({ image, onPost, onCancel }: PostViewProps) {
+function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
   const [isCalculating, setIsCalculating] = useState(true);
-  const [ecoScore, setEcoScore] = useState<number | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<MealAnalysisResult | null>(null);
 
-  useState(() => {
-    setTimeout(() => {
-      setEcoScore(92);
-      setIsCalculating(false);
-    }, 2000);
-  });
+  useEffect(() => {
+    setIsCalculating(true);
+    analyzeMeal(imageFile)
+      .then((result) => {
+        setAnalysisResult(result);
+        setIsCalculating(false);
+      })
+      .catch((error) => {
+        console.error('Analysis error:', error);
+        setIsCalculating(false);
+      });
+  }, [imageFile]);
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'bg-emerald-500';
+    if (score >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getScoreIcon = (type: 'vegetal' | 'healthy' | 'carbon') => {
+    switch (type) {
+      case 'vegetal': return Leaf;
+      case 'healthy': return Apple;
+      case 'carbon': return Cloud;
+    }
+  };
 
   return (
     <motion.div
-      className="h-full flex flex-col bg-black"
+      className="h-full flex flex-col bg-black overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       {/* Header */}
-      <div className="pt-12 pb-4 px-6 flex items-center justify-between">
-        <button onClick={onCancel} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+      <div className="pt-12 pb-4 px-6 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/10">
+        <button 
+          onClick={onCancel} 
+          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors"
+        >
           <X className="w-6 h-6 text-white" />
         </button>
-        <h2 className="text-white text-xl">Nouveau post</h2>
-        <div className="w-10" />
+        <h2 className="text-white text-xl font-semibold">Nouveau post</h2>
+        <div className="w-12" />
       </div>
 
-      {/* Image preview - full bleed like Instagram */}
-      <div className="aspect-square w-full mb-6">
-        <img src={image} alt="Captured dish" className="w-full h-full object-cover" />
+      {/* Image preview */}
+      <div className="aspect-square w-full mb-6 relative">
+        <img src={imageUrl} alt="Captured dish" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/40" />
       </div>
 
       {/* Score calculation */}
-      <div className="px-6 flex-1">
+      <div className="px-6 flex-1 pb-6">
         <AnimatePresence mode="wait">
           {isCalculating ? (
             <motion.div
               key="calculating"
-              className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 text-center border border-white/10"
+              className="bg-white/5 backdrop-blur-md rounded-3xl p-8 text-center border border-white/10"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-6"
+                className="w-24 h-24 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-6"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
-              <p className="text-white text-lg">
+              <p className="text-white text-xl font-semibold mb-2">
                 Calcul de ton score écolo...
               </p>
-              <p className="text-white/50 text-sm mt-2">
+              <p className="text-white/50 text-sm">
                 Recherche dans tes achats Carrefour
               </p>
             </motion.div>
-          ) : (
+          ) : analysisResult ? (
             <motion.div
               key="result"
-              className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-3xl p-8"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
+              className="space-y-6"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 text-white/90 mb-2">
-                    <Check className="w-5 h-5" />
-                    <span className="text-sm">Ingrédients trouvés</span>
-                  </div>
-                  <div className="text-white text-2xl">
-                    Score calculé
+              {/* Three Score Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                {(['vegetal', 'healthy', 'carbon'] as const).map((type) => {
+                  const score = analysisResult.scores[type];
+                  const Icon = getScoreIcon(type);
+                  const colorClass = getScoreColor(score);
+                  const labels = {
+                    vegetal: 'Végétal',
+                    healthy: 'Santé',
+                    carbon: 'Carbone'
+                  };
+
+                  return (
+                    <motion.div
+                      key={type}
+                      className={`${colorClass} rounded-2xl p-4 shadow-xl border border-white/20`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * (type === 'vegetal' ? 0 : type === 'healthy' ? 1 : 2) }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className="w-5 h-5 text-white" />
+                        <span className="text-white/90 text-xs font-medium">{labels[type]}</span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-white text-3xl font-bold">{score}</span>
+                        <span className="text-white/70 text-xs">/100</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Recommendations */}
+              {analysisResult.recommendations.length > 0 && (
+                <div className="bg-purple-600 rounded-3xl p-6 shadow-xl border border-purple-400/30">
+                  <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
+                    <Sparkles className="w-6 h-6" />
+                    Suggestions d'amélioration
+                  </h3>
+                  <div className="space-y-3">
+                    {analysisResult.recommendations.map((rec, idx) => (
+                      <motion.div
+                        key={idx}
+                        className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + idx * 0.1 }}
+                      >
+                        <div className="text-white font-semibold mb-1">{rec.title}</div>
+                        <div className="text-white/90 text-sm">{rec.description}</div>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
-                  <div className="relative w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm flex flex-col items-center justify-center border-2 border-white/40">
-                    <span className="text-white text-4xl leading-none">{ecoScore}</span>
-                    <span className="text-white/90 text-xs leading-none mt-1">éco</span>
+              )}
+
+              {/* Success badge */}
+              <motion.div
+                className="bg-emerald-500 rounded-3xl p-6 shadow-xl border border-emerald-400/30"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/40">
+                    <Check className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white text-lg font-semibold">Analyse complète</div>
+                    <div className="text-white/80 text-sm">Impact carbone vérifié</div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-white/80">
-                <Flame className="w-5 h-5" />
-                <span className="text-sm">Impact carbone vérifié</span>
-              </div>
+              </motion.div>
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
 
       {/* Post button */}
-      <div className="p-6">
+      <div className="p-6 pt-0 sticky bottom-0 bg-black/95 backdrop-blur-sm">
         <motion.button
           onClick={onPost}
-          disabled={isCalculating}
-          className="w-full py-5 bg-white text-black rounded-2xl text-lg disabled:opacity-30 disabled:cursor-not-allowed shadow-xl"
+          disabled={isCalculating || !analysisResult}
+          className="w-full py-5 bg-white text-black rounded-2xl text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-2xl"
           whileTap={{ scale: 0.95 }}
         >
           Partager avec ta squad

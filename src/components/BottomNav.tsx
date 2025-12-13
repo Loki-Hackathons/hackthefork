@@ -19,8 +19,8 @@ export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
   ];
 
   return (
-    <div className="bg-black/95 backdrop-blur-lg border-t border-white/10 safe-area-inset-bottom">
-      <div className="flex items-center justify-around px-2 py-3">
+    <div className="bg-black/98 backdrop-blur-xl border-t border-white/10 safe-area-inset-bottom shadow-2xl">
+      <div className="flex items-center justify-around px-2 py-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentScreen === item.id;
@@ -31,42 +31,56 @@ export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className="relative -mt-6"
+                className="relative -mt-7 z-10"
               >
                 <motion.div
-                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/50"
-                  whileTap={{ scale: 0.9 }}
+                  className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-2xl border-2 border-white/20"
+                  whileTap={{ scale: 0.85 }}
+                  whileHover={{ scale: 1.05 }}
+                  animate={isActive ? { 
+                    boxShadow: [
+                      '0 0 0 0 rgba(16, 185, 129, 0.4)',
+                      '0 0 0 8px rgba(16, 185, 129, 0)',
+                      '0 0 0 0 rgba(16, 185, 129, 0)'
+                    ]
+                  } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  <Icon className="w-7 h-7 text-white" strokeWidth={2.5} />
+                  <Icon className="w-8 h-8 text-white" strokeWidth={2.5} />
                 </motion.div>
               </button>
             );
           }
           
           return (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className="relative flex flex-col items-center justify-center py-1 px-3 min-w-[60px]"
+              whileTap={{ scale: 0.9 }}
             >
               <motion.div
-                whileTap={{ scale: 0.9 }}
+                animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.3 }}
               >
                 <Icon 
-                  className={`w-6 h-6 transition-colors ${
+                  className={`w-6 h-6 transition-all duration-200 ${
                     isActive ? 'text-white' : 'text-white/40'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
               </motion.div>
               {item.label && (
-                <span className={`text-xs mt-1 transition-colors ${
-                  isActive ? 'text-white' : 'text-white/40'
-                }`}>
+                <motion.span 
+                  className={`text-xs mt-1 font-medium transition-colors ${
+                    isActive ? 'text-white' : 'text-white/40'
+                  }`}
+                  animate={isActive ? { scale: 1.05 } : {}}
+                >
                   {item.label}
-                </span>
+                </motion.span>
               )}
-            </button>
+            </motion.button>
           );
         })}
       </div>

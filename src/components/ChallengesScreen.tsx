@@ -53,14 +53,14 @@ export function ChallengesScreen() {
       <div className="pt-12 pb-6 px-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-yellow-500 flex items-center justify-center">
               <Trophy className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-white text-3xl">
               Challenges
             </h1>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full shadow-lg">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500 rounded-full shadow-lg">
             <Flame className="w-5 h-5 text-white" />
             <span className="text-white">1,250</span>
           </div>
@@ -73,7 +73,7 @@ export function ChallengesScreen() {
       {/* Featured Challenge */}
       <div className="px-6 mb-8">
         <motion.div 
-          className="bg-gradient-to-br from-purple-600 via-pink-600 to-purple-600 rounded-3xl p-6 relative overflow-hidden"
+          className="bg-purple-600 rounded-3xl p-6 relative overflow-hidden"
           whileTap={{ scale: 0.98 }}
         >
           {/* Animated background */}
@@ -174,16 +174,16 @@ export function ChallengesScreen() {
             >
               {/* Rank Badge */}
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                entry.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black' :
-                entry.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-black' :
-                entry.rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
+                entry.rank === 1 ? 'bg-yellow-500 text-black' :
+                entry.rank === 2 ? 'bg-slate-400 text-black' :
+                entry.rank === 3 ? 'bg-orange-500 text-white' :
                 'bg-white/10 text-white/50'
               }`}>
                 {entry.rank}
               </div>
               
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl">
                 {entry.avatar}
               </div>
               
@@ -259,7 +259,7 @@ function ChallengeCard({ challenge }: ChallengeCardProps) {
             {challenge.participants.slice(0, 3).map((avatar, idx) => (
               <div
                 key={idx}
-                className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 border-2 border-black flex items-center justify-center text-sm"
+                className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-black flex items-center justify-center text-sm"
               >
                 {avatar}
               </div>
@@ -281,7 +281,7 @@ function ChallengeCard({ challenge }: ChallengeCardProps) {
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
+              className="h-full rounded-full bg-emerald-500"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}

@@ -81,7 +81,7 @@ export function ProfileScreen() {
       <div className="pt-12 pb-6 px-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-4xl border-4 border-white/10">
+            <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10">
               {mockProfile.avatar}
             </div>
             <div>
@@ -153,9 +153,9 @@ export function ProfileScreen() {
           Impact Écologique
         </h2>
         
-        <div className="bg-gradient-to-br from-emerald-950/50 to-green-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20">
+        <div className="bg-emerald-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20">
           {/* Background glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5" />
+          <div className="absolute inset-0 bg-emerald-500/5" />
           
           {/* Interactive 3D visualization */}
           <div 
@@ -305,15 +305,15 @@ export function ProfileScreen() {
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                entry.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black' :
-                entry.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-black' :
-                entry.rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
+                entry.rank === 1 ? 'bg-yellow-500 text-black' :
+                entry.rank === 2 ? 'bg-slate-400 text-black' :
+                entry.rank === 3 ? 'bg-orange-500 text-white' :
                 'bg-white/10 text-white/50'
               }`}>
                 {entry.rank}
               </div>
               
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-2xl">
                 {entry.avatar}
               </div>
               
@@ -359,7 +359,7 @@ export function ProfileScreen() {
               />
               
               {/* Score overlay */}
-              <div className="absolute top-2 right-2 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 border-2 border-white flex items-center justify-center shadow-lg">
+              <div className="absolute top-2 right-2 w-10 h-10 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-lg">
                 <span className="text-white text-sm">{post.score}</span>
               </div>
             </motion.div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'motion/react';
+import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'motion/react';
 import { Heart, X, Sparkles } from 'lucide-react';
 
 interface TinderOnboardingProps {
@@ -64,10 +64,15 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const [currentIndex, setCurrentIndex] = useState(0);
   const [liked, setLiked] = useState<number[]>([]);
   const [showParticles, setShowParticles] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const currentDish = dishes[currentIndex];
 
   const handleSwipe = (direction: 'left' | 'right') => {
+    if (isExiting) return;
+    
+    setIsExiting(true);
+    
     if (direction === 'right') {
       setLiked([...liked, currentDish.id]);
       setShowParticles(true);
@@ -77,11 +82,14 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
     setTimeout(() => {
       if (currentIndex < dishes.length - 1) {
         setCurrentIndex(currentIndex + 1);
+        setIsExiting(false);
       } else {
         if (!isRevisit) {
           onComplete();
         } else {
           setCurrentIndex(0);
+          setLiked([]);
+          setIsExiting(false);
         }
       }
     }, 300);
@@ -95,14 +103,14 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden">
       {/* Header */}
       {!isRevisit && (
-        <div className="absolute top-0 left-0 right-0 z-20 pt-12 pb-6 px-6 bg-gradient-to-b from-black/80 to-transparent">
-          <h2 className="text-white text-3xl text-center mb-2">
+        <div className="relative z-20 pt-12 pb-4 px-6 shrink-0">
+          <h2 className="text-white text-2xl text-center mb-1 font-bold">
             Découvre des plats
           </h2>
-          <p className="text-white/60 text-center">
+          <p className="text-white/60 text-center text-sm">
             Swipe pour nous dire ce qui te plaît
           </p>
-          <div className="flex justify-center gap-1.5 mt-6">
+          <div className="flex justify-center gap-1.5 mt-4">
             {dishes.map((_, idx) => (
               <div
                 key={idx}
@@ -118,22 +126,32 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       )}
 
       {/* Card Stack */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative overflow-hidden pb-24">
         {/* Next card (background) */}
         {currentIndex < dishes.length - 1 && (
           <motion.div
-            className="absolute inset-x-6 inset-y-20 rounded-3xl bg-slate-800"
+            className="absolute left-6 right-6 w-auto max-w-md h-[500px] rounded-3xl bg-slate-800 overflow-hidden pointer-events-none"
             initial={{ scale: 0.92, opacity: 0.3 }}
             animate={{ scale: 0.92, opacity: 0.3 }}
-          />
+            transition={{ duration: 0.3 }}
+          >
+            <img
+              src={dishes[currentIndex + 1].image}
+              alt={dishes[currentIndex + 1].name}
+              className="w-full h-full object-cover opacity-50"
+            />
+          </motion.div>
         )}
 
         {/* Current card */}
-        <SwipeCard
-          dish={currentDish}
-          onSwipe={handleSwipe}
-          key={currentDish.id}
-        />
+        <AnimatePresence mode="wait">
+          <SwipeCard
+            dish={currentDish}
+            onSwipe={handleSwipe}
+            key={currentDish.id}
+            isExiting={isExiting}
+          />
+        </AnimatePresence>
 
         {/* Particle explosion effect */}
         {showParticles && (
@@ -145,14 +163,16 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       <div className="pb-12 px-8 flex justify-center gap-8 z-20">
         <motion.button
           onClick={() => handleSwipe('left')}
-          className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-xl"
+          disabled={isExiting}
+          className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-xl disabled:opacity-50"
           whileTap={{ scale: 0.9 }}
         >
           <X className="w-8 h-8 text-white" strokeWidth={3} />
         </motion.button>
         <motion.button
           onClick={() => handleSwipe('right')}
-          className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-xl shadow-emerald-500/50"
+          disabled={isExiting}
+          className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center shadow-xl disabled:opacity-50"
           whileTap={{ scale: 0.9 }}
         >
           <Heart className="w-9 h-9 text-white fill-white" />
@@ -165,26 +185,48 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
 interface SwipeCardProps {
   dish: typeof dishes[0];
   onSwipe: (direction: 'left' | 'right') => void;
+  isExiting: boolean;
 }
 
-function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
+function SwipeCard({ dish, onSwipe, isExiting }: SwipeCardProps) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-20, 20]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const likeOpacity = useTransform(x, [0, 100], [0, 1]);
+  const nopeOpacity = useTransform(x, [-100, 0], [1, 0]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (isExiting) return;
+    
     if (Math.abs(info.offset.x) > 100) {
-      onSwipe(info.offset.x > 0 ? 'right' : 'left');
+      const direction = info.offset.x > 0 ? 1 : -1;
+      const exitX = direction * 600;
+      
+      // Animate card off screen
+      x.set(exitX);
+      
+      // Call onSwipe after a brief delay
+      setTimeout(() => {
+        onSwipe(info.offset.x > 0 ? 'right' : 'left');
+      }, 100);
+    } else {
+      // Snap back to center
+      x.set(0);
     }
   };
 
   return (
     <motion.div
       drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
+      dragConstraints={{ left: -300, right: 300 }}
+      dragElastic={0.2}
       onDragEnd={handleDragEnd}
       style={{ x, rotate, opacity }}
-      className="absolute inset-x-6 inset-y-20 rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing"
+      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, x: x.get(), rotate: x.get() > 0 ? 30 : -30, scale: 0.8 }}
+      transition={{ duration: 0.3 }}
+      className="absolute left-6 right-6 w-auto max-w-md h-[500px] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing"
       whileTap={{ cursor: 'grabbing' }}
     >
       {/* Image */}
@@ -192,24 +234,22 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
         src={dish.image}
         alt={dish.name}
         className="w-full h-full object-cover"
+        draggable={false}
       />
 
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/30" />
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Dish info */}
-      <div className="absolute bottom-0 left-0 right-0 p-8">
-        <h3 className="text-white text-4xl mb-4 drop-shadow-lg">
+      <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
+        <h3 className="text-white text-4xl mb-4 drop-shadow-lg font-bold">
           {dish.name}
         </h3>
         <div className="flex flex-wrap gap-2">
           {dish.ingredients.map((ingredient, idx) => (
             <span
               key={idx}
-              className="px-4 py-2 bg-white/10 backdrop-blur-md text-white rounded-full border border-white/20"
+              className="px-4 py-2 bg-white/10 backdrop-blur-md text-white rounded-full border border-white/20 text-sm font-medium"
             >
               {ingredient}
             </span>
@@ -219,17 +259,17 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
 
       {/* Swipe indicators */}
       <motion.div
-        className="absolute top-12 right-8 px-8 py-4 bg-emerald-500 rounded-2xl rotate-12 border-4 border-white shadow-2xl"
-        style={{ opacity: useTransform(x, [0, 100], [0, 1]) }}
+        className="absolute top-12 right-8 px-8 py-4 bg-emerald-500 rounded-2xl rotate-12 border-4 border-white shadow-2xl z-20"
+        style={{ opacity: likeOpacity }}
       >
-        <span className="text-white text-3xl drop-shadow">OUI!</span>
+        <span className="text-white text-3xl font-bold drop-shadow">OUI!</span>
       </motion.div>
 
       <motion.div
-        className="absolute top-12 left-8 px-8 py-4 bg-white rounded-2xl -rotate-12 border-4 border-red-500 shadow-2xl"
-        style={{ opacity: useTransform(x, [-100, 0], [1, 0]) }}
+        className="absolute top-12 left-8 px-8 py-4 bg-white rounded-2xl -rotate-12 border-4 border-red-500 shadow-2xl z-20"
+        style={{ opacity: nopeOpacity }}
       >
-        <span className="text-red-500 text-3xl drop-shadow">NOPE</span>
+        <span className="text-red-500 text-3xl font-bold drop-shadow">NOPE</span>
       </motion.div>
     </motion.div>
   );
@@ -253,7 +293,7 @@ function ParticleExplosion({ ingredients }: ParticleExplosionProps) {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute top-1/2 left-1/2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg"
+          className="absolute top-1/2 left-1/2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg font-medium"
           initial={{ 
             x: 0, 
             y: 0, 

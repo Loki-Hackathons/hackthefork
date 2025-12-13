@@ -232,7 +232,7 @@ export function ShopScreen() {
                       </button>
                       <button
                         onClick={() => swapIngredient(ingredient.id)}
-                        className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl active:scale-95 transition-transform"
+                        className="flex-1 py-3 bg-emerald-500 text-white rounded-xl active:scale-95 transition-transform"
                       >
                         Changer
                       </button>

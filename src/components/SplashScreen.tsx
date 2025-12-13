@@ -23,7 +23,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <motion.div 
-      className="fixed inset-0 bg-gradient-to-br from-emerald-600 via-green-500 to-lime-400 flex flex-col items-center justify-center overflow-hidden"
+      className="fixed inset-0 bg-emerald-600 flex flex-col items-center justify-center overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
