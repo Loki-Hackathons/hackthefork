@@ -59,6 +59,12 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
     setError(null);
     try {
       const fetchedPosts = await fetchPosts();
+      // Log to verify user names are being fetched
+      console.log('Loaded posts with user names:', fetchedPosts.map(p => ({ 
+        id: p.id, 
+        user_id: p.user_id, 
+        user_name: p.user_name || 'No name' 
+      })));
       setPosts(fetchedPosts);
     } catch (err: any) {
       console.error('Error loading posts:', err);
@@ -390,7 +396,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'vegetal' as const,
               score: post.vegetal_score,
-              label: 'Plant-based',
+              label: 'Nutriscore',
               description: 'Percentage of plant-based ingredients in the dish',
               icon: Leaf,
               color: post.vegetal_score >= 80 ? 'emerald' : post.vegetal_score >= 60 ? 'yellow' : 'red'
@@ -398,7 +404,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'healthy' as const,
               score: post.health_score,
-              label: 'Health',
+              label: 'Additive',
               description: 'Nutritional score based on ingredient quality',
               icon: Apple,
               color: post.health_score >= 80 ? 'emerald' : post.health_score >= 60 ? 'yellow' : 'red'
@@ -406,7 +412,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'carbon' as const,
               score: post.carbon_score,
-              label: 'Carbon',
+              label: 'Label',
               description: 'Environmental impact: higher score means lower carbon footprint',
               icon: Cloud,
               color: post.carbon_score >= 80 ? 'emerald' : post.carbon_score >= 60 ? 'yellow' : 'red'
@@ -415,99 +421,122 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
 
           return (
             <motion.div
-              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md"
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpenScoreDetailsPostId(null)}
             >
               <motion.div
-                className="absolute bottom-0 left-0 right-0 bg-black/95 rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto"
+                className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-gray-900 via-gray-900 to-black rounded-t-3xl shadow-2xl border-t border-white/10 p-6 max-h-[90vh] overflow-y-auto"
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-white text-2xl font-bold mb-1">Score Details</h2>
-                  </div>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-white text-3xl font-bold">Score Details</h2>
                   <button
                     onClick={() => setOpenScoreDetailsPostId(null)}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
 
-                {/* Overall Score */}
-                <div className="mb-6">
-                  <div className={`${getScoreColor(avgScore)} rounded-2xl p-6 text-center`}>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Sparkles className="w-6 h-6 text-white" />
-                      <span className="text-white/90 text-sm font-medium">Score écolo global</span>
-                    </div>
-                    <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-white text-5xl font-bold">{avgScore}</span>
-                      <span className="text-white/70 text-lg">/100</span>
+                {/* Overall Score Card */}
+                <div className="mb-8">
+                  <div className={`${getScoreColor(avgScore)} rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden`}>
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <Sparkles className="w-5 h-5 text-white" />
+                        <span className="text-white/95 text-sm font-semibold uppercase tracking-wider">Overall Score</span>
+                      </div>
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="text-white text-6xl font-extrabold drop-shadow-lg">{avgScore}</span>
+                        <span className="text-white/80 text-xl font-semibold">/100</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Individual Scores */}
-                <div className="space-y-4 mb-6">
-                  <h3 className="text-white text-lg font-semibold mb-4">Details by Category</h3>
-                  {scoreDetails.map((detail) => {
-                    const Icon = detail.icon;
-                    const colorClass = detail.color === 'emerald' ? 'bg-emerald-500' : detail.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500';
-                    
-                    return (
-                      <motion.div
-                        key={detail.type}
-                        className={`${colorClass} rounded-2xl p-5`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: scoreDetails.indexOf(detail) * 0.1 }}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                              <Icon className="w-6 h-6 text-white" />
+                <div className="mb-6">
+                  <h3 className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-4 px-1">Category Breakdown</h3>
+                  <div className="space-y-3">
+                    {scoreDetails.map((detail) => {
+                      const Icon = detail.icon;
+                      const colorMap: Record<string, string> = {
+                        emerald: 'from-emerald-500 to-emerald-600',
+                        yellow: 'from-yellow-500 to-amber-500',
+                        red: 'from-red-500 to-rose-600'
+                      };
+                      const bgColorMap: Record<string, string> = {
+                        emerald: 'bg-emerald-500/10 border-emerald-500/30',
+                        yellow: 'bg-yellow-500/10 border-yellow-500/30',
+                        red: 'bg-red-500/10 border-red-500/30'
+                      };
+                      const textColorMap: Record<string, string> = {
+                        emerald: 'text-emerald-400',
+                        yellow: 'text-yellow-400',
+                        red: 'text-red-400'
+                      };
+                      
+                      return (
+                        <motion.div
+                          key={detail.type}
+                          className={`${bgColorMap[detail.color]} rounded-2xl p-5 border backdrop-blur-sm`}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: scoreDetails.indexOf(detail) * 0.1 }}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorMap[detail.color]} flex items-center justify-center shadow-lg`}>
+                                <Icon className="w-7 h-7 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="text-white font-bold text-lg mb-1">{detail.label}</h4>
+                                <p className="text-white/60 text-xs leading-relaxed max-w-[200px]">{detail.description}</p>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="text-white font-semibold text-lg">{detail.label}</h4>
-                              <p className="text-white/80 text-sm">{detail.description}</p>
+                            <div className="text-right">
+                              <div className={`${textColorMap[detail.color]} text-4xl font-extrabold mb-1`}>{detail.score}</div>
+                              <div className="text-white/50 text-xs font-medium">/100</div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-white text-3xl font-bold">{detail.score}</span>
-                              <span className="text-white/70 text-sm">/100</span>
-                            </div>
+                          
+                          {/* Progress bar */}
+                          <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div
+                              className={`h-full bg-gradient-to-r ${colorMap[detail.color]} rounded-full shadow-lg`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${detail.score}%` }}
+                              transition={{ duration: 1, delay: scoreDetails.indexOf(detail) * 0.1 + 0.3, ease: "easeOut" }}
+                            />
                           </div>
-                        </div>
-                        
-                        {/* Progress bar */}
-                        <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-white rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${detail.score}%` }}
-                            transition={{ duration: 0.8, delay: scoreDetails.indexOf(detail) * 0.1 + 0.2 }}
-                          />
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Info */}
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    💡 <strong className="text-white">Tip:</strong> To improve your score, prioritize local, seasonal, and plant-based ingredients.
-                  </p>
+                {/* Info Tip */}
+                <div className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 rounded-2xl p-5 border border-emerald-500/20 backdrop-blur-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-lg">💡</span>
+                    </div>
+                    <div>
+                      <p className="text-white/90 text-sm font-semibold mb-1">Improve Your Score</p>
+                      <p className="text-white/70 text-xs leading-relaxed">
+                        Prioritize local, seasonal, and plant-based ingredients to boost your eco score.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
@@ -548,6 +577,13 @@ function FeedPost({
   const [showHeart, setShowHeart] = useState(false);
   const avatar = getUserAvatar(post.user_id);
   const timeAgo = getTimeAgo(post.created_at);
+  const currentUserId = getUserId();
+  const currentUserName = getUserName();
+  
+  // Use post user_name if available, otherwise use current user's name if it's their post, otherwise fallback to User ID
+  const displayName = post.user_name || 
+    (post.user_id === currentUserId && currentUserName ? currentUserName : null) || 
+    `User ${post.user_id.slice(0, 8)}`;
 
   const handleDoubleTap = () => {
     if (!post.is_upvoted) {
@@ -607,7 +643,9 @@ function FeedPost({
           </motion.div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-white font-semibold text-lg drop-shadow-lg">User {post.user_id.slice(0, 8)}</span>
+              <span className="text-white font-semibold text-lg drop-shadow-lg">
+                {displayName}
+              </span>
             </div>
             <div className="text-white/70 text-sm">{timeAgo}</div>
           </div>
@@ -637,7 +675,25 @@ function FeedPost({
           <div className="flex-1 pb-1">
             {/* Action hint */}
             <motion.button 
-              onClick={() => onNavigate('shop', post.id, post.image_url)}
+              onClick={async () => {
+                // Recalculate scores based on ingredients before navigating
+                try {
+                  console.log('🔄 Recalculating scores for post:', post.id);
+                  const response = await fetch(`/api/recalculate-scores?post_id=${post.id}`);
+                  if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Scores recalculated:', data.scores);
+                    // Reload the feed to show updated scores
+                    window.location.reload();
+                  } else {
+                    console.warn('⚠️ Score recalculation failed, continuing anyway');
+                  }
+                } catch (error) {
+                  console.error('Error recalculating scores:', error);
+                }
+                // Navigate to shop screen
+                onNavigate('shop', post.id, post.image_url);
+              }}
               className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2.5 text-white text-sm flex items-center gap-2 hover:bg-white/20 transition-colors group border border-white/20"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

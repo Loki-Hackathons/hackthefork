@@ -13,7 +13,8 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  turbopack: {}, // Explicitly enable Turbopack
+  // Note: next-pwa requires webpack, not Turbopack
+  // Vercel will use webpack automatically when next-pwa is detected
 };
 
 export default withPWA(nextConfig);

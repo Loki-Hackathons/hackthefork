@@ -44,6 +44,7 @@ export interface Comment {
 export interface Post {
   id: string;
   user_id: string;
+  user_name?: string; // User's display name
   image_url: string;
   created_at: string;
   vegetal_score: number;
