@@ -37,7 +37,7 @@ async function analyzeImageWithBlackbox(imageUrl: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'blackboxai/openai/gpt-4o', // Modèle GPT-4 avec vision
+        model: 'blackboxai/google/gemini-3-pro-preview', // Gemini 3 Pro Preview with vision
         messages: [
           {
             role: 'user',

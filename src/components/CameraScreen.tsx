@@ -316,6 +316,52 @@ function PostFlow({ imageFile, imageUrl, onPost, onCancel }: PostFlowProps) {
     }>;
   } | null>(null);
 
+  // Poll for recommendations when analysisData is set and recommendations are missing
+  useEffect(() => {
+    if (!analysisData || analysisData.recommendations) return; // Already has recommendations or no data
+    
+    const userId = getUserId();
+    if (!userId || !analysisData.dishName) return;
+    
+    let attempts = 0;
+    const maxAttempts = 20; // Poll for up to 20 seconds (20 attempts * 1 second)
+    let timeoutId: NodeJS.Timeout;
+    
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/analyze?user_id=${userId}&dish_name=${encodeURIComponent(analysisData.dishName)}`);
+        
+        if (response.status === 200) {
+          const data = await response.json();
+          if (data.recommendations && data.recommendations.length > 0) {
+            // Update analysisData with recommendations
+            setAnalysisData(prev => prev ? { ...prev, recommendations: data.recommendations } : null);
+            console.log('Recommendations loaded:', data.recommendations);
+            return; // Stop polling
+          }
+        }
+        
+        // If not ready yet and haven't exceeded max attempts, continue polling
+        if (attempts < maxAttempts) {
+          attempts++;
+          timeoutId = setTimeout(poll, 1000); // Poll every 1 second
+        } else {
+          console.log('Recommendations polling timeout');
+        }
+      } catch (error) {
+        console.error('Error polling for recommendations:', error);
+      }
+    };
+    
+    // Start polling after a short delay
+    timeoutId = setTimeout(poll, 2000); // Wait 2 seconds before first poll
+    
+    // Cleanup on unmount
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [analysisData]);
+
   return (
     <div className="h-full bg-black flex flex-col">
       {step === 'preview' && (
@@ -684,12 +730,12 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 />
-                <span>Sharing...</span>
+                <span>Publishing...</span>
               </>
             ) : (
               <>
                 <Share2 className="w-5 h-5" />
-                <span>Share</span>
+                <span>Publish</span>
               </>
             )}
           </motion.button>
