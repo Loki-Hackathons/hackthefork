@@ -274,12 +274,25 @@ export async function fetchUserStats(): Promise<UserStats> {
 }
 
 // Create a new post with image upload
-export async function createPost(imageFile: File): Promise<Post> {
+export async function createPost(
+  imageFile: File, 
+  feedback?: { rating: number | null; comment: string }
+): Promise<Post> {
   try {
     const userId = getUserId();
     const formData = new FormData();
     formData.append('image', imageFile);
     formData.append('user_id', userId);
+    
+    // Ajouter le feedback si fourni
+    if (feedback) {
+      if (feedback.rating !== null) {
+        formData.append('rating', feedback.rating.toString());
+      }
+      if (feedback.comment) {
+        formData.append('comment', feedback.comment);
+      }
+    }
     
     const response = await fetch('/api/posts', {
       method: 'POST',

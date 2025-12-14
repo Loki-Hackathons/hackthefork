@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight, ChefHat, Share2 } from 'lucide-react';
 import type { Screen } from './MainApp';
 import { analyzeMeal, createPost, type MealAnalysisResult } from '@/services/api';
+import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
 
 interface CameraScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -41,14 +42,11 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
     }, 1500);
   };
 
-  const handlePost = async (imageFile: File) => {
-    try {
-      await createPost(imageFile);
+  const handlePost = async () => {
+    // Le post sera créé dans PostView avec le feedback
+    setTimeout(() => {
       onNavigate('feed');
-    } catch (error) {
-      console.error('Failed to create post:', error);
-      alert('Failed to create post. Please try again.');
-    }
+    }, 500);
   };
 
   const handleReset = () => {
@@ -441,17 +439,49 @@ function PostAnalysisView({ imageFile, imageUrl, onPost, onCancel }: PostAnalysi
   const [isCalculating, setIsCalculating] = useState(true);
   const [analysisResult, setAnalysisResult] = useState<MealAnalysisResult | null>(null);
   const [isPosting, setIsPosting] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState<string>('');
+  const [foodFactsResult, setFoodFactsResult] = useState<RecommendedDish | null>(null);
+  const [isProcessingFoodFacts, setIsProcessingFoodFacts] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsCalculating(true);
+    setIsProcessingFoodFacts(true);
+    setError(null);
+    
+    // Analyze meal with existing API
     analyzeMeal(imageFile)
       .then((result) => {
         setAnalysisResult(result);
         setIsCalculating(false);
+        
+        // Process with OpenFoodFacts in parallel
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const base64Image = reader.result as string;
+            const foodFacts = await processDishPhoto(base64Image);
+            setFoodFactsResult(foodFacts);
+            setIsProcessingFoodFacts(false);
+            // Show feedback form once analysis is complete
+            setShowFeedback(true);
+          } catch (err: unknown) {
+            console.error('OpenFoodFacts error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to analyze with OpenFoodFacts');
+            setIsProcessingFoodFacts(false);
+            // Still show feedback even if OpenFoodFacts fails
+            setShowFeedback(true);
+          }
+        };
+        reader.readAsDataURL(imageFile);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Analysis error:', error);
         setIsCalculating(false);
+        setIsProcessingFoodFacts(false);
+        setError(error instanceof Error ? error.message : 'Failed to analyze meal');
       });
   }, [imageFile]);
 
@@ -582,23 +612,140 @@ function PostAnalysisView({ imageFile, imageUrl, onPost, onCancel }: PostAnalysi
         </motion.div>
       )}
 
+      {/* OpenFoodFacts Products - Scrollable section above button */}
+      {!isCalculating && foodFactsResult && !error && (
+        <motion.div
+          className="absolute bottom-40 left-6 right-6 z-20 max-h-64 overflow-y-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <div className="bg-purple-600/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-purple-400/40">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-white" />
+              <h3 className="text-white text-base font-bold">Open Food Facts Products</h3>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {foodFactsResult.products.slice(0, 3).map((prod, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 border border-white/10"
+                >
+                  {prod.image ? (
+                    <img 
+                      src={prod.image} 
+                      alt={prod.name} 
+                      className="w-10 h-10 rounded-lg object-cover" 
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-white/40" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-xs truncate">{prod.name}</p>
+                    {prod.ecoScore && prod.ecoScore !== 'unknown' && (
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        prod.ecoScore === 'a' ? 'bg-emerald-700 text-white' :
+                        prod.ecoScore === 'b' ? 'bg-green-600 text-white' :
+                        prod.ecoScore === 'c' ? 'bg-yellow-500 text-black' :
+                        prod.ecoScore === 'd' ? 'bg-orange-500 text-white' :
+                        'bg-red-500 text-white'
+                      }`}>
+                        {prod.ecoScore.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Feedback Form - Show when analysis is complete */}
+      {showFeedback && !isCalculating && analysisResult && (
+        <motion.div
+          className="absolute bottom-40 left-6 right-6 z-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+            <h3 className="text-white text-lg font-bold mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Give your feedback
+            </h3>
+            
+            {/* Rating */}
+            <div className="mb-3">
+              <label className="text-white/80 text-xs mb-2 block">Rating (optional)</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <motion.button
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all ${
+                      rating && star <= rating
+                        ? 'bg-yellow-500 text-white scale-110'
+                        : 'bg-white/10 text-white/40 hover:bg-white/20'
+                    }`}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    ⭐
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment */}
+            <div className="mb-3">
+              <label className="text-white/80 text-xs mb-2 block">Comment (optional)</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Tell us what you think..."
+                className="w-full bg-white/5 border border-white/20 rounded-xl p-2 text-white text-sm placeholder-white/40 resize-none focus:outline-none focus:border-emerald-500/50"
+                rows={2}
+                maxLength={200}
+              />
+            </div>
+
+            <motion.button
+              onClick={() => setShowFeedback(false)}
+              className="w-full py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              {rating ? `Continue with ${rating}⭐` : 'Skip'}
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Post button */}
       <div className="absolute bottom-0 left-0 right-0 p-6 z-30 bg-gradient-to-t from-black/90 to-transparent">
         <motion.button
           onClick={async () => {
-            setIsPosting(true);
-            try {
-              await onPost();
-            } catch (error) {
-              console.error('Error posting:', error);
-              setIsPosting(false);
+            if (!showFeedback && analysisResult) {
+              setIsPosting(true);
+              try {
+                await createPost(imageFile, {
+                  rating: rating,
+                  comment: comment
+                });
+                onPost();
+              } catch (error: unknown) {
+                console.error('Error creating post:', error);
+                onPost();
+              } finally {
+                setIsPosting(false);
+              }
             }
           }}
-          disabled={isCalculating || !analysisResult || isPosting}
+          disabled={isCalculating || !analysisResult || showFeedback}
           className="w-full py-5 bg-white text-black rounded-2xl text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-2xl"
           whileTap={{ scale: 0.95 }}
         >
-          {isPosting ? 'Posting...' : 'Share with your squad'}
+          {isPosting ? 'Posting...' : showFeedback ? 'Complete feedback to continue' : 'Share with your squad'}
         </motion.button>
       </div>
     </motion.div>

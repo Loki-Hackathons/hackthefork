@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
     const userId = formData.get('user_id') as string;
+    const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null;
+    const comment = formData.get('comment') as string | null;
 
     if (!imageFile || !userId) {
       return NextResponse.json(
@@ -170,7 +172,9 @@ export async function POST(request: NextRequest) {
         image_url: publicUrl,
         vegetal_score: scores.vegetal,
         health_score: scores.health,
-        carbon_score: scores.carbon
+        carbon_score: scores.carbon,
+        rating: rating,
+        comment: comment || null
       })
       .select()
       .single();
