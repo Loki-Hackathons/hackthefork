@@ -469,17 +469,17 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
                   <div className="space-y-3">
                     {scoreDetails.map((detail) => {
                       const Icon = detail.icon;
-                      const colorMap = {
+                      const colorMap: Record<string, string> = {
                         emerald: 'from-emerald-500 to-emerald-600',
                         yellow: 'from-yellow-500 to-amber-500',
                         red: 'from-red-500 to-rose-600'
                       };
-                      const bgColorMap = {
+                      const bgColorMap: Record<string, string> = {
                         emerald: 'bg-emerald-500/10 border-emerald-500/30',
                         yellow: 'bg-yellow-500/10 border-yellow-500/30',
                         red: 'bg-red-500/10 border-red-500/30'
                       };
-                      const textColorMap = {
+                      const textColorMap: Record<string, string> = {
                         emerald: 'text-emerald-400',
                         yellow: 'text-yellow-400',
                         red: 'text-red-400'
