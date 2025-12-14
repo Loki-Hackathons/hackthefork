@@ -225,12 +225,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean up potential Markdown formatting
-    let cleanedJson = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+    let cleanedJson = rawContent
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .replace(/\*\*/g, "") // Remove markdown bold (**text**)
+      .replace(/\*/g, "") // Remove markdown italic (*text*)
+      .trim();
     
     // Try to extract JSON if it's wrapped in other text
+    // Look for JSON object pattern, handling nested braces
     const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       cleanedJson = jsonMatch[0];
+    }
+    
+    // Additional cleanup: remove any leading text before the first {
+    const firstBrace = cleanedJson.indexOf('{');
+    if (firstBrace > 0) {
+      cleanedJson = cleanedJson.substring(firstBrace);
+    }
+    
+    // Remove any trailing text after the last }
+    const lastBrace = cleanedJson.lastIndexOf('}');
+    if (lastBrace >= 0 && lastBrace < cleanedJson.length - 1) {
+      cleanedJson = cleanedJson.substring(0, lastBrace + 1);
     }
 
     let parsedResult;
