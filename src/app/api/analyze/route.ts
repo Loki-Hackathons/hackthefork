@@ -2,7 +2,6 @@
 // Unified AI analysis endpoint - extracts ingredients and calculates scores
 
 import { NextRequest, NextResponse } from 'next/server';
-import { calculateScores } from '@/lib/scoring';
 import type { DetectedIngredient } from '@/lib/image-analysis';
 
 const BLACKBOX_API_URL = "https://api.blackbox.ai/chat/completions";
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
       imageUrl = `data:image/jpeg;base64,${base64Image}`;
     }
 
-    // Prepare the prompt to extract dish name AND ingredients
+    // Prepare the prompt to extract dish name, ingredients, AND calculate scores
     const systemPrompt = `
       Return only the JSON object.
 
@@ -74,6 +73,10 @@ export async function POST(request: NextRequest) {
       Analyze this food image and identify:
       1. The name of the meal/dish
       2. All visible ingredients in the dish
+      3. Calculate three sustainability scores (0-100) with proper weighting:
+         - vegetal: How plant-based is this dish? (0 = all animal products, 100 = fully plant-based)
+         - health: How healthy is this dish? (0 = very unhealthy, 100 = very healthy)
+         - carbon: Environmental impact (0 = high carbon footprint, 100 = low carbon footprint)
       
       CRITICAL CONSTRAINTS:
       - Return ONLY a STRICT JSON object (no markdown, no backticks, no extra text)
@@ -284,7 +287,11 @@ export async function POST(request: NextRequest) {
     // Extract the complete JSON object
     cleanedJson = cleanedJson.substring(0, lastBrace + 1);
 
-    let parsedResult: { dishName: string; ingredients: DetectedIngredient[] };
+    let parsedResult: { 
+      dishName: string; 
+      ingredients: DetectedIngredient[]; 
+      scores?: { vegetal: number; health: number; carbon: number };
+    };
     try {
       parsedResult = JSON.parse(cleanedJson);
     } catch (parseError: any) {
@@ -321,8 +328,27 @@ export async function POST(request: NextRequest) {
       }))
       .filter((ing: DetectedIngredient) => ing.name.length > 0);
 
-    // Calculate scores immediately
-    const scores = calculateScores(normalizedIngredients);
+    // Validate and normalize scores from AI
+    let scores: { vegetal: number; health: number; carbon: number };
+    if (parsedResult.scores && 
+        typeof parsedResult.scores.vegetal === 'number' &&
+        typeof parsedResult.scores.health === 'number' &&
+        typeof parsedResult.scores.carbon === 'number') {
+      // Use AI-provided scores, ensure they're in valid range
+      scores = {
+        vegetal: Math.max(0, Math.min(100, Math.round(parsedResult.scores.vegetal))),
+        health: Math.max(0, Math.min(100, Math.round(parsedResult.scores.health))),
+        carbon: Math.max(0, Math.min(100, Math.round(parsedResult.scores.carbon)))
+      };
+    } else {
+      // Fallback: AI didn't provide scores, use default values
+      console.warn("AI did not provide scores, using default values");
+      scores = {
+        vegetal: 50,
+        health: 50,
+        carbon: 50
+      };
+    }
 
     const response: AnalyzeResponse = {
       dishName: parsedResult.dishName.trim(),

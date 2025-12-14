@@ -6,6 +6,7 @@ import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight, ChefH
 import type { Screen } from './MainApp';
 import { createPost } from '@/services/api';
 import type { DetectedIngredient } from '@/lib/image-analysis';
+import { calculateAggregatedScore } from '@/lib/score-utils';
 
 interface CameraScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -481,9 +482,7 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState<string>('');
 
-  const avgScore = Math.round(
-    (analysisData.scores.vegetal + analysisData.scores.health + analysisData.scores.carbon) / 3
-  );
+  const avgScore = calculateAggregatedScore(analysisData.scores);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-emerald-700';
