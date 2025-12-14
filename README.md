@@ -43,6 +43,31 @@ A social platform where you post photos of your meals, and the app automatically
 - 📱 **PWA Ready**: Progressive Web App capabilities
 - 🌙 **Dark Theme**: Beautiful dark UI optimized for mobile
 
+### 6. **B2C2B: Industrial Dashboard & Data Insights** 🏭
+- 📊 **Aggregated Analytics**: Real-time insights on plant-based consumption trends
+- 🏢 **Industry Dashboard**: Food manufacturers and retailers access anonymized data
+- 🌱 **Plant-Based Improvement**: Data helps industry understand consumer preferences and improve product offerings
+- 💚 **Health Optimization**: Insights on nutritional patterns to guide healthier product development
+- 📈 **Market Intelligence**: Trend analysis on ingredient preferences, meal patterns, and sustainability scores
+- 🔄 **Feedback Loop**: Industry improvements → Better products → Higher user scores → More data
+
+**The B2C2B Model:**
+1. **B2C (Business to Consumer)**: Users post meals, get scores, improve their eating habits
+2. **Data Aggregation**: Anonymized meal data, ingredient preferences, and score trends are collected
+3. **B2B (Business to Business)**: Food manufacturers and retailers purchase insights to:
+   - Understand which plant-based ingredients consumers prefer
+   - Identify gaps in current product offerings
+   - Optimize recipes for better health and sustainability scores
+   - Develop new products aligned with consumer trends
+4. **Impact**: Industry creates better plant-based options → Users have healthier, more sustainable choices → Improved scores across the platform
+
+**Plant-Based Track Focus:**
+As part of the plant-based track, our platform specifically helps:
+- **Increase plant-based consumption** by showing users how to improve their vegetal scores
+- **Guide industry** to develop more appealing and accessible plant-based products
+- **Improve health outcomes** through data-driven insights on nutritional patterns
+- **Create a virtuous cycle** where better products lead to better eating habits
+
 ---
 
 ## 🛠️ Tech Stack
@@ -426,11 +451,13 @@ Swipe-based onboarding experience.
 
 ### Innovation Points
 
-1. **Multi-Model AI Fallback**: Ensures reliability even if one model fails
-2. **Real-World Integration**: Open Food Facts + Auchan automation
-3. **Complete User Journey**: Photo → Analysis → Shopping → Ordering
-4. **Social Engagement**: BeReal-style feed with sustainability focus
-5. **No Login Required**: Cookie-based identity for frictionless UX
+1. **B2C2B Business Model**: Data monetization through industrial dashboard - helping food industry improve plant-based offerings
+2. **Multi-Model AI Fallback**: Ensures reliability even if one model fails
+3. **Real-World Integration**: Open Food Facts + Auchan automation
+4. **Complete User Journey**: Photo → Analysis → Shopping → Ordering
+5. **Social Engagement**: BeReal-style feed with sustainability focus
+6. **No Login Required**: Cookie-based identity for frictionless UX
+7. **Plant-Based Focus**: Dedicated to improving health and increasing plant-based consumption through data-driven insights
 
 ### Technical Achievements
 
@@ -489,11 +516,9 @@ Built for HackTheFork hackathon.
 ## 🚧 Future Enhancements
 
 - [ ] User authentication (email/social login)
-- [ ] Recipe suggestions based on scores
 - [ ] Challenge system (weekly sustainability goals)
 - [ ] Multi-store support (Carrefour, Leclerc, etc.)
 - [ ] Meal planning features
-- [ ] Carbon footprint tracking over time
 - [ ] Social sharing to external platforms
 
 ---
