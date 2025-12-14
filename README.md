@@ -2,9 +2,9 @@
 
 ## 🎯 Project Overview
 
-**HackTheFork** is a B2C hackathon MVP that combines social media engagement with AI-powered food analysis to promote sustainable eating habits. Users post photos of their meals, and the app automatically analyzes them to compute sustainability scores, suggest better ingredients, and even automate grocery shopping.
+**HackTheFork** is **the BeREAL of food to help you improve**. 
 
-Think **BeReal meets sustainability** - a social platform where every meal photo gets instant AI analysis for vegetal proportion, health, and carbon footprint scores.
+A social platform where you post photos of your meals, and the app automatically analyzes them to compute sustainability scores, suggest better ingredients, and help you make more eco-friendly food choices. Every meal photo gets instant AI analysis for vegetal proportion, health, and carbon footprint scores, helping you improve your eating habits over time.
 
 ---
 
@@ -301,14 +301,7 @@ Returns user statistics (aggregated scores, post count, etc.)
 pnpm install
 ```
 
-### 2. Set Up Supabase
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Run the SQL schema (see `src/supabase/schema.sql` if available, or create tables manually)
-3. Create a storage bucket named `meal-images` (public access)
-4. Copy your project URL and anon key
-
-### 3. Configure Environment
+### 2. Configure Environment
 
 Create `.env.local`:
 
@@ -324,7 +317,7 @@ BLACKBOX_API_KEY=your_blackbox_api_key
 ### 4. Run Development Server
 
 ```bash
-pnpm dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
@@ -337,8 +330,6 @@ For grocery automation:
 
 ```bash
 cd automation-service
-npm install
-npm start
 ```
 
 Service runs on port 3001.
