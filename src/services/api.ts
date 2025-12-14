@@ -166,8 +166,8 @@ export async function analyzeMeal(imageFile: File): Promise<MealAnalysisResult> 
       scores,
       recommendations,
     };
-  } catch (error) {
-    // Fallback to mock data for demo
+  } catch (analysisError) {
+    // Fallback to mock data for demo (Python backend not running - this is expected)
     const mockIngredients: Ingredient[] = [
       { name: 'chicken', confidence: 0.85 },
       { name: 'rice', confidence: 0.72 },
@@ -269,6 +269,32 @@ export async function fetchUserStats(): Promise<UserStats> {
     };
   } catch (error: any) {
     console.error('Error fetching user stats:', error);
+    throw error;
+  }
+}
+
+// Create a new post with image upload
+export async function createPost(imageFile: File): Promise<Post> {
+  try {
+    const userId = getUserId();
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    formData.append('user_id', userId);
+    
+    const response = await fetch('/api/posts', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create post');
+    }
+    
+    const data = await response.json();
+    return data.post;
+  } catch (error: any) {
+    console.error('Error creating post:', error);
     throw error;
   }
 }
