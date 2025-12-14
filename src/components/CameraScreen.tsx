@@ -78,7 +78,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
             key="post"
             imageFile={capturedFile}
             imageUrl={capturedImage}
-            onPost={handlePost}
+            onPost={() => handlePost(capturedFile)}
             onCancel={handleReset}
           />
         )}
@@ -221,7 +221,7 @@ function ScanViewWithDishScanner({ onBack, onShop }: ScanViewWithDishScannerProp
 interface PostViewProps {
   imageFile: File;
   imageUrl: string;
-  onPost: () => void;
+  onPost: () => Promise<void>;
   onCancel: () => void;
 }
 
@@ -233,6 +233,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
   const [currentImageUrl, setCurrentImageUrl] = useState<string>(imageUrl);
   const [currentImageFile, setCurrentImageFile] = useState<File>(imageFile);
   const [error, setError] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
@@ -311,24 +312,51 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
 
   return (
     <motion.div
-      className="h-full flex flex-col bg-black overflow-y-auto relative"
+      className="h-full flex flex-col bg-black relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="pt-12 pb-4 px-6 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/10">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 pt-12 pb-4 px-6 flex items-center justify-between z-30 bg-gradient-to-b from-black/80 to-transparent">
         <button 
           onClick={onCancel} 
           className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors"
         >
           <X className="w-6 h-6 text-white" />
         </button>
-        <h2 className="text-white text-xl font-semibold">Nouveau post</h2>
+        <h2 className="text-white text-xl font-semibold drop-shadow-lg">Nouveau post</h2>
         <div className="w-12" />
       </div>
 
+      {/* Full screen image */}
+      <div className="absolute inset-0">
+        <img src={currentImageUrl} alt="Captured dish" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+
+      {/* Hidden gallery input */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGallerySelect}
+      />
+      
+      {/* Gallery button - bottom right */}
+      <motion.button
+        onClick={handleGalleryButtonClick}
+        disabled={isProcessingFoodFacts || isCalculating}
+        className="absolute bottom-32 right-6 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 hover:bg-white/30 transition-colors z-20 disabled:opacity-50"
+        whileTap={{ scale: 0.9 }}
+      >
+        <Image className="w-6 h-6 text-white" />
+      </motion.button>
+
+      {/* Small Score Badge - Top Left */}
       {!isCalculating && analysisResult && (
-        <div className="absolute left-6 top-40 z-20">
+        <div className="absolute left-6 top-28 z-20">
           {(() => {
             const avgScore = Math.round(
               (analysisResult.scores.vegetal + analysisResult.scores.healthy + analysisResult.scores.carbon) / 3
@@ -337,10 +365,9 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
             
             return (
               <motion.div
-                className={`${colorClass} rounded-xl px-3 py-2 shadow-xl backdrop-blur-sm border border-white/20`}
+                className={`${colorClass} rounded-xl px-3 py-2 shadow-xl backdrop-blur-sm border border-white/30`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.05 }}
               >
                 <div className="flex flex-col items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -355,37 +382,96 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
-      <div className="aspect-square w-full mb-6 relative group">
-        <img src={currentImageUrl} alt="Captured dish" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/40" />
-        
-        <div className="absolute bottom-6 right-6">
-          <motion.button
-            onClick={handleGalleryButtonClick}
-            disabled={isProcessingFoodFacts || isCalculating}
-            className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-2xl border-2 border-emerald-500/50 backdrop-blur-md"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Image className="w-6 h-6" />
-            <span className="font-bold text-lg">Choisir une photo</span>
-          </motion.button>
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleGallerySelect}
-          />
-        </div>
-      </div>
+      {/* Compact Analysis Complete Badge */}
+      {!isCalculating && analysisResult && (
+        <motion.div
+          className="absolute left-6 right-6 top-48 z-20"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="bg-emerald-500/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/30 inline-flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <Check className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white text-sm font-semibold">Analyse complète</span>
+          </div>
+        </motion.div>
+      )}
 
-      {error && (
-        <div className="px-6 mb-6">
+      {/* Loading State */}
+      {isCalculating && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
           <motion.div
-            className="bg-red-600/20 border border-red-500/50 rounded-3xl p-6 text-center backdrop-blur-md"
+            className="bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center border border-white/20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <motion.div
+              className="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-4"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <p className="text-white text-lg font-semibold mb-1">
+              Calcul du score écolo...
+            </p>
+            <p className="text-white/50 text-sm">
+              Analyse en cours
+            </p>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Recommendations - Bottom overlay */}
+      {!isCalculating && analysisResult && analysisResult.recommendations.length > 0 && (
+        <motion.div
+          className="absolute bottom-32 left-6 right-6 z-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="bg-purple-600/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-purple-400/40">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-white" />
+              <h3 className="text-white text-base font-bold">Suggestions</h3>
+            </div>
+            <div className="space-y-2">
+              {analysisResult.recommendations.slice(0, 2).map((rec, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10"
+                >
+                  <div className="text-white font-semibold text-sm mb-1">{rec.title}</div>
+                  <div className="text-white/90 text-xs">{rec.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Food Facts Badge - if available */}
+      {!isCalculating && foodFactsResult && !error && (
+        <motion.div
+          className="absolute top-64 left-6 right-6 z-20"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="bg-purple-500/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/30 inline-flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-white" />
+            <span className="text-white text-sm font-semibold">
+              Score Open Food Facts: {foodFactsResult.totalScore}/100
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/60 backdrop-blur-sm">
+          <motion.div
+            className="bg-red-600/20 border border-red-500/50 rounded-3xl p-6 text-center backdrop-blur-md mx-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -393,7 +479,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
             <p className="text-white text-lg font-semibold mb-2">
               Erreur d'analyse
             </p>
-            <p className="text-white/80 text-sm">
+            <p className="text-white/80 text-sm mb-4">
               {error}
             </p>
             <motion.button
@@ -401,7 +487,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
                 setError(null);
                 handleGalleryButtonClick();
               }}
-              className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors"
               whileTap={{ scale: 0.95 }}
             >
               Réessayer avec une autre photo
@@ -410,6 +496,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
+<<<<<<< HEAD
       {foodFactsResult && !error && (
         <div className="px-6 mb-6">
           <motion.div
