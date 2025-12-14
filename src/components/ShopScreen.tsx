@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingCart, ArrowRight, Leaf, TrendingDown, CheckCircle, AlertCircle, X } from 'lucide-react';
 import type { Screen } from './MainApp';
+import { translateIngredients } from '@/lib/ingredient-translator';
 
 interface Ingredient {
   id: number;
@@ -131,10 +132,12 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
         return;
       }
       
-      // Extraire les noms des ingrédients
+      // Extraire les noms des ingrédients et les traduire en français
       const ingredientNames = checkedIngredients.map(ing => ing.name);
+      const translatedIngredients = translateIngredients(ingredientNames);
       
-      console.log('🛒 Starting Auchan automation with ingredients:', ingredientNames);
+      console.log('🛒 Starting Auchan automation with ingredients:', translatedIngredients);
+      console.log('📝 Original ingredients:', ingredientNames);
       
       const response = await fetch('/api/order', {
         method: 'POST',
@@ -142,7 +145,7 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          ingredients: ingredientNames
+          ingredients: translatedIngredients
         }),
       });
 
