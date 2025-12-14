@@ -57,15 +57,19 @@ async function saveSession() {
     headless: false,
     slowMo: 100,
     channel: 'chrome', // Utiliser Chrome installé
-    viewport: { width: 1920, height: 1080 },
+    viewport: null, // IMPORTANT: Laisser null pour que start-maximized fonctionne
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     args: [
+      '--start-maximized', // Maximiser la fenêtre au démarrage
       '--disable-blink-features=AutomationControlled',
-      '--disable-dev-shm-usage'
+      '--disable-dev-shm-usage',
+      '--no-default-browser-check'
     ]
   });
   
   const page = await context.pages()[0] || await context.newPage();
+  
+  // Ne PAS forcer la taille du viewport ici, laisser Chrome gérer
   
   await page.goto(CONFIG.BASE_URL, { waitUntil: 'networkidle' });
   
@@ -100,4 +104,3 @@ async function saveSession() {
 }
 
 saveSession().catch(console.error);
-

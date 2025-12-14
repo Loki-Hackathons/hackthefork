@@ -10,7 +10,7 @@ node_modules/
 !.yarn/releases
 !.yarn/versions
 yarn.lock
-pnpm-lock.yaml
+# pnpm-lock.yaml - DO NOT IGNORE (needed for Vercel deployment)
 
 # testing
 /coverage

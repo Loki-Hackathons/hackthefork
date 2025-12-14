@@ -396,7 +396,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'vegetal' as const,
               score: post.vegetal_score,
-              label: 'Plant-based',
+              label: 'Nutriscore',
               description: 'Percentage of plant-based ingredients in the dish',
               icon: Leaf,
               color: post.vegetal_score >= 80 ? 'emerald' : post.vegetal_score >= 60 ? 'yellow' : 'red'
@@ -404,7 +404,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'healthy' as const,
               score: post.health_score,
-              label: 'Health',
+              label: 'Additive',
               description: 'Nutritional score based on ingredient quality',
               icon: Apple,
               color: post.health_score >= 80 ? 'emerald' : post.health_score >= 60 ? 'yellow' : 'red'
@@ -412,7 +412,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             {
               type: 'carbon' as const,
               score: post.carbon_score,
-              label: 'Carbon',
+              label: 'Label',
               description: 'Environmental impact: higher score means lower carbon footprint',
               icon: Cloud,
               color: post.carbon_score >= 80 ? 'emerald' : post.carbon_score >= 60 ? 'yellow' : 'red'
@@ -469,17 +469,17 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
                   <div className="space-y-3">
                     {scoreDetails.map((detail) => {
                       const Icon = detail.icon;
-                      const colorMap = {
+                      const colorMap: Record<string, string> = {
                         emerald: 'from-emerald-500 to-emerald-600',
                         yellow: 'from-yellow-500 to-amber-500',
                         red: 'from-red-500 to-rose-600'
                       };
-                      const bgColorMap = {
+                      const bgColorMap: Record<string, string> = {
                         emerald: 'bg-emerald-500/10 border-emerald-500/30',
                         yellow: 'bg-yellow-500/10 border-yellow-500/30',
                         red: 'bg-red-500/10 border-red-500/30'
                       };
-                      const textColorMap = {
+                      const textColorMap: Record<string, string> = {
                         emerald: 'text-emerald-400',
                         yellow: 'text-yellow-400',
                         red: 'text-red-400'
@@ -675,7 +675,25 @@ function FeedPost({
           <div className="flex-1 pb-1">
             {/* Action hint */}
             <motion.button 
-              onClick={() => onNavigate('shop', post.id, post.image_url)}
+              onClick={async () => {
+                // Recalculate scores based on ingredients before navigating
+                try {
+                  console.log('🔄 Recalculating scores for post:', post.id);
+                  const response = await fetch(`/api/recalculate-scores?post_id=${post.id}`);
+                  if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Scores recalculated:', data.scores);
+                    // Reload the feed to show updated scores
+                    window.location.reload();
+                  } else {
+                    console.warn('⚠️ Score recalculation failed, continuing anyway');
+                  }
+                } catch (error) {
+                  console.error('Error recalculating scores:', error);
+                }
+                // Navigate to shop screen
+                onNavigate('shop', post.id, post.image_url);
+              }}
               className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2.5 text-white text-sm flex items-center gap-2 hover:bg-white/20 transition-colors group border border-white/20"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

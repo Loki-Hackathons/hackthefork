@@ -75,9 +75,18 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
     setLoading(true);
     try {
       const userStats = await fetchUserStats();
+      console.log('📊 Stats loaded:', userStats); // Debug
       setStats(userStats);
     } catch (error) {
       console.error('Error loading stats:', error);
+      // En cas d'erreur, initialiser avec des valeurs par défaut pour éviter les 0
+      setStats({
+        post_count: 0,
+        avg_vegetal_score: 0,
+        avg_health_score: 0,
+        avg_carbon_score: 0,
+        total_co2_avoided: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -221,6 +230,17 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           <button 
             onClick={() => {
               if (onNavigate) {
+                onNavigate('challenges');
+              }
+            }}
+            className="flex-1 py-2.5 bg-yellow-500 text-black rounded-xl flex items-center justify-center gap-2 font-semibold"
+          >
+            <Trophy className="w-5 h-5" />
+            Challenges
+          </button>
+          <button 
+            onClick={() => {
+              if (onNavigate) {
                 onNavigate('messages');
               }
             }}
@@ -228,9 +248,6 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           >
             <MessageCircle className="w-5 h-5" />
             Messages
-          </button>
-          <button className="flex-1 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl border border-white/20">
-            Share
           </button>
           <button className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
             <Users className="w-5 h-5 text-white" />
@@ -245,6 +262,12 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           Environmental Impact
         </h2>
         
+        {stats && stats.post_count === 0 ? (
+          <div className="bg-emerald-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20 text-center">
+            <p className="text-white/60 text-sm mb-2">Aucun post encore</p>
+            <p className="text-white/40 text-xs">Créez votre premier post pour voir vos statistiques !</p>
+          </div>
+        ) : (
         <div className="bg-emerald-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20">
           {/* Background glow */}
           <div className="absolute inset-0 bg-emerald-500/5" />
@@ -261,7 +284,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             onTouchEnd={handleMouseUp}
           >
             <svg 
-              viewBox="0 0 200 200" 
+              viewBox="0 0 240 240" 
               className="w-full h-full"
               style={{
                 transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
@@ -270,51 +293,58 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             >
               {/* Axes */}
               {[
-                { angle: 0, label: 'Health', value: stats?.avg_health_score || 0, color: '#10b981' },
-                { angle: 90, label: 'Carbon', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
-                { angle: 180, label: 'Plant-based', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
-                { angle: 270, label: 'Average', value: totalScore, color: '#f59e0b' },
+                { angle: 0, label: 'Health', shortLabel: 'Health', value: stats?.avg_health_score || 0, color: '#10b981' },
+                { angle: 90, label: 'Carbon', shortLabel: 'Carbon', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
+                { angle: 180, label: 'Plant-based', shortLabel: 'Plant', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
+                { angle: 270, label: 'Average', shortLabel: 'Avg', value: totalScore, color: '#f59e0b' },
               ].map((axis, idx) => {
                 const rad = (axis.angle * Math.PI) / 180;
-                const maxRadius = 80;
+                const centerX = 120; // Centre ajusté pour le nouveau viewBox
+                const centerY = 120;
+                const maxRadius = 75; // Réduit pour laisser plus d'espace pour les labels
                 const valueRadius = (axis.value / 100) * maxRadius;
+                const labelRadius = maxRadius + 30; // Plus d'espace pour les labels
                 
                 return (
                   <g key={idx}>
                     <line
-                      x1="100"
-                      y1="100"
-                      x2={100 + maxRadius * Math.cos(rad)}
-                      y2={100 + maxRadius * Math.sin(rad)}
+                      x1={centerX}
+                      y1={centerY}
+                      x2={centerX + maxRadius * Math.cos(rad)}
+                      y2={centerY + maxRadius * Math.sin(rad)}
                       stroke="#ffffff20"
                       strokeWidth="1"
                       strokeDasharray="2,2"
                     />
                     
                     <circle
-                      cx={100 + valueRadius * Math.cos(rad)}
-                      cy={100 + valueRadius * Math.sin(rad)}
+                      cx={centerX + valueRadius * Math.cos(rad)}
+                      cy={centerY + valueRadius * Math.sin(rad)}
                       r="5"
                       fill={axis.color}
                       className="drop-shadow-lg"
                     />
                     
+                    {/* Label court pour éviter les coupures */}
                     <text
-                      x={100 + (maxRadius + 25) * Math.cos(rad)}
-                      y={100 + (maxRadius + 25) * Math.sin(rad)}
+                      x={centerX + labelRadius * Math.cos(rad)}
+                      y={centerY + labelRadius * Math.sin(rad)}
                       fill="white"
-                      fontSize="12"
+                      fontSize="11"
                       textAnchor="middle"
                       dominantBaseline="middle"
+                      style={{ fontWeight: '500' }}
                     >
-                      {axis.label}
+                      {axis.shortLabel}
                     </text>
                     
+                    {/* Valeur */}
                     <text
-                      x={100 + (maxRadius + 25) * Math.cos(rad)}
-                      y={100 + (maxRadius + 25) * Math.sin(rad) + 14}
+                      x={centerX + labelRadius * Math.cos(rad)}
+                      y={centerY + labelRadius * Math.sin(rad) + 15}
                       fill={axis.color}
-                      fontSize="16"
+                      fontSize="18"
+                      fontWeight="bold"
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
@@ -327,10 +357,10 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
               {/* Filled shape */}
               <motion.path
                 d={`
-                  M ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.cos(0)} ${100 + ((stats?.avg_health_score || 0) / 100) * 80 * Math.sin(0)}
-                  L ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.cos(Math.PI / 2)} ${100 + ((stats?.avg_carbon_score || 0) / 100) * 80 * Math.sin(Math.PI / 2)}
-                  L ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.cos(Math.PI)} ${100 + ((stats?.avg_vegetal_score || 0) / 100) * 80 * Math.sin(Math.PI)}
-                  L ${100 + (totalScore / 100) * 80 * Math.cos(3 * Math.PI / 2)} ${100 + (totalScore / 100) * 80 * Math.sin(3 * Math.PI / 2)}
+                  M ${120 + ((stats?.avg_health_score || 0) / 100) * 75 * Math.cos(0)} ${120 + ((stats?.avg_health_score || 0) / 100) * 75 * Math.sin(0)}
+                  L ${120 + ((stats?.avg_carbon_score || 0) / 100) * 75 * Math.cos(Math.PI / 2)} ${120 + ((stats?.avg_carbon_score || 0) / 100) * 75 * Math.sin(Math.PI / 2)}
+                  L ${120 + ((stats?.avg_vegetal_score || 0) / 100) * 75 * Math.cos(Math.PI)} ${120 + ((stats?.avg_vegetal_score || 0) / 100) * 75 * Math.sin(Math.PI)}
+                  L ${120 + (totalScore / 100) * 75 * Math.cos(3 * Math.PI / 2)} ${120 + (totalScore / 100) * 75 * Math.sin(3 * Math.PI / 2)}
                   Z
                 `}
                 fill="url(#gradient)"
@@ -350,21 +380,22 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
               </defs>
               
               {/* Center score */}
-              <circle cx="100" cy="100" r="32" fill="#000000" />
-              <circle cx="100" cy="100" r="30" fill="url(#gradient)" fillOpacity="0.2" />
+              <circle cx="120" cy="120" r="32" fill="#000000" />
+              <circle cx="120" cy="120" r="30" fill="url(#gradient)" fillOpacity="0.2" />
               <text
-                x="100"
-                y="95"
+                x="120"
+                y="115"
                 fill="white"
                 fontSize="28"
                 textAnchor="middle"
                 dominantBaseline="middle"
+                fontWeight="bold"
               >
                 {totalScore}
               </text>
               <text
-                x="100"
-                y="112"
+                x="120"
+                y="132"
                 fill="#10b981"
                 fontSize="11"
                 textAnchor="middle"
@@ -379,6 +410,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             Swipe to rotate
           </p>
         </div>
+        )}
       </div>
 
       {/* Stats Summary */}
