@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, MessageCircle, Share2, Bookmark, Leaf, Apple, Cloud, Sparkles, X, Send, Copy, Plus, MoreVertical } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Leaf, Apple, Cloud, Sparkles, X, Send } from 'lucide-react';
 import type { Screen } from './MainApp';
 import { fetchPosts, toggleUpvote, fetchComments, createComment, type Post, type Comment } from '@/services/api';
 import { getUserId, getUserName } from '@/lib/cookies';
@@ -44,32 +44,10 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
   const [currentIndex, setCurrentIndex] = useState(0);
   const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
-  const [sharePostId, setSharePostId] = useState<string | null>(null);
   const [openScoreDetailsPostId, setOpenScoreDetailsPostId] = useState<string | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
-
-  const mockContacts = [
-    { id: 1, name: 'Florian', avatar: '👨' },
-    { id: 2, name: 'Bastian', avatar: '👨' },
-    { id: 3, name: 'Alexandre', avatar: '👨' },
-    { id: 4, name: 'Mounir', avatar: '👨' },
-    { id: 5, name: 'Camille', avatar: '👩' },
-  ];
-
-  const shareApps = [
-    { id: 1, name: 'AirDrop', icon: '📡', color: 'bg-blue-500' },
-    { id: 2, name: 'Notes', icon: '📝', color: 'bg-yellow-500' },
-    { id: 3, name: 'Gmail', icon: '📧', color: 'bg-red-500' },
-    { id: 4, name: 'Messages', icon: '💬', color: 'bg-green-500' },
-  ];
-
-  const shareActions = [
-    { id: 1, name: 'Copy', icon: Copy },
-    { id: 2, name: 'Add to Reading List', icon: Plus },
-    { id: 3, name: 'Add Bookmark', icon: Bookmark },
-  ];
 
   useEffect(() => {
     loadPosts();
@@ -118,6 +96,32 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
       }
       return newSet;
     });
+  };
+
+  const handleSharePost = async (post: Post) => {
+    const shareData = {
+      title: 'HackTheFork 🍴',
+      text: `J'ai trouvé ce plat incroyable sur HackTheFork ! Score écolo: ${Math.round((post.vegetal_score + post.health_score + post.carbon_score) / 3)}/100. On cuisine ça ?`,
+      url: typeof window !== 'undefined' ? `${window.location.origin}/post/${post.id}` : `https://hackthefork.app/post/${post.id}`,
+    };
+
+    // Check if the browser supports native sharing (Mobile usually does)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        console.log('Shared successfully');
+      } catch (error: any) {
+        // User cancelled or error occurred
+        if (error.name !== 'AbortError') {
+          console.log('Error sharing:', error);
+        }
+      }
+    } else {
+      // Fallback for Desktop (which often doesn't support navigator.share)
+      // We open WhatsApp Web directly as a backup
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + ' ' + shareData.url)}`;
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -245,7 +249,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
           isActive={index === currentIndex}
           isFirst={index === 0}
           onCommentClick={() => setOpenCommentsPostId(post.id)}
-          onShareClick={() => setSharePostId(post.id)}
+          onShareClick={() => handleSharePost(post)}
           onSave={() => handleSave(post.id)}
           onScoreClick={() => setOpenScoreDetailsPostId(post.id)}
           isSaved={savedPosts.has(post.id)}
@@ -369,110 +373,6 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
         )}
       </AnimatePresence>
 
-      {/* Share Sheet */}
-      <AnimatePresence>
-        {sharePostId !== null && (
-          <motion.div
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSharePostId(null)}
-          >
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="px-6 pt-4 pb-2 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                      <Leaf className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 font-medium text-sm truncate">
-                        Post
-                      </p>
-                      <p className="text-gray-500 text-xs truncate">hackthefork.app</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSharePostId(null)}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
-                  >
-                    <X className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
-                {/* Contacts */}
-                <div className="mb-6">
-                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                    {mockContacts.map((contact) => (
-                      <motion.button
-                        key={contact.id}
-                        className="flex flex-col items-center gap-2 flex-shrink-0"
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-2xl">
-                            {contact.avatar}
-                          </div>
-                          <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                            <Share2 className="w-2.5 h-2.5 text-white" />
-                          </div>
-                        </div>
-                        <span className="text-gray-700 text-xs font-medium">{contact.name}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Share Apps */}
-                <div className="mb-6">
-                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                    {shareApps.map((app) => (
-                      <motion.button
-                        key={app.id}
-                        className="flex flex-col items-center gap-2 flex-shrink-0"
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <div className={`w-16 h-16 ${app.color} rounded-2xl flex items-center justify-center text-2xl shadow-md`}>
-                          {app.icon}
-                        </div>
-                        <span className="text-gray-700 text-xs font-medium">{app.name}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-1">
-                  {shareActions.map((action) => {
-                    const Icon = action.icon;
-                    return (
-                      <motion.button
-                        key={action.id}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-100 transition-colors"
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <span className="text-gray-900 font-medium text-base">{action.name}</span>
-                        <Icon className="w-5 h-5 text-gray-400" />
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Score Details Modal */}
       <AnimatePresence>
@@ -728,7 +628,7 @@ function FeedPost({
       </div>
 
       {/* Bottom content */}
-      <div className="absolute bottom-0 left-0 right-0 pb-8 pl-6 pr-0 z-20">
+      <div className="absolute bottom-0 left-0 right-0 pb-24 pl-6 pr-0 z-20">
         <div className="flex items-end gap-6">
           {/* Left side - Content */}
           <div className="flex-1 pb-1">
@@ -826,7 +726,7 @@ function FeedPost({
       {/* Scroll indicator */}
       {isFirst && (
         <motion.div
-          className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10"
+          className="absolute bottom-48 left-1/2 -translate-x-1/2 z-10"
           animate={{ y: [0, 12, 0], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         >

@@ -118,7 +118,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
   if (loading) {
     return (
       <div className="h-full bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Chargement...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
