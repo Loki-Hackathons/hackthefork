@@ -3,11 +3,31 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BLACKBOX_API_KEY = "sk-ZRDD5Yygu4l7EQYGG3nJIg";
 const BLACKBOX_API_URL = "https://api.blackbox.ai/chat/completions";
+
+// Get API key from environment variable
+const getBlackboxApiKey = () => {
+  const apiKey = process.env.BLACKBOX_API_KEY;
+  if (!apiKey) {
+    throw new Error('BLACKBOX_API_KEY environment variable is not set');
+  }
+  return apiKey;
+};
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if API key is configured
+    let apiKey: string;
+    try {
+      apiKey = getBlackboxApiKey();
+    } catch (error: any) {
+      console.error("Blackbox API key not configured:", error.message);
+      return NextResponse.json(
+        { error: "Blackbox API key not configured. Please set BLACKBOX_API_KEY environment variable." },
+        { status: 500 }
+      );
+    }
+
     let body;
     try {
       body = await request.json();
@@ -102,7 +122,7 @@ export async function POST(request: NextRequest) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${BLACKBOX_API_KEY}`
+            "Authorization": `Bearer ${apiKey}`
           },
           body: JSON.stringify(payload)
         });

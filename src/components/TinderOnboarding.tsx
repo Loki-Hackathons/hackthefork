@@ -67,14 +67,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const [showNameInput, setShowNameInput] = useState(false);
   const [userName, setUserNameInput] = useState('');
 
-  const currentDish = scannedDish ? {
-    id: 'scanned',
-    name: scannedDish.dishName,
-    image: scannedDish.products[0]?.image || dishes[0]?.image || 'https://images.unsplash.com/photo-1510035618584-c442b241abe7',
-    ingredients: scannedDish.products.map(p => p.name.split(' ')[0]).slice(0, 3),
-    score: scannedDish.totalScore,
-    products: scannedDish.products
-  } : dishes[currentIndex];
+  const currentDish = dishes[currentIndex];
 
   // Helper to safely increment index or complete
   const nextCard = () => {
@@ -117,59 +110,11 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       }, 0);
     }
 
-    // If it's a scanned dish, reset scan mode after swipe
-    if (scannedDish) {
-      setScannedDish(null);
-      setScanMode(false);
-      return;
-    }
-
     // Immediately trigger next card
     // The component will unmount and the exit animation will play thanks to AnimatePresence
     nextCard();
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-    setScanError(null);
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
-      console.log("📸 Image loaded, starting analysis...");
-      
-      try {
-        // Analyze image and get Food Facts recommendations
-        console.log("🚀 Calling processDishPhoto...");
-        const foodFactsResult = await processDishPhoto(base64String);
-        console.log("✅ Analysis complete! Result:", foodFactsResult);
-        setScannedDish(foodFactsResult);
-        setScanMode(false);
-        setIsScanning(false);
-      } catch (error: any) {
-        console.error('❌ Scan error:', error);
-        console.error('Error message:', error?.message);
-        console.error('Error stack:', error?.stack);
-        setScanError(error?.message || "Échec de l'analyse. Essaye avec une photo plus claire.");
-        setIsScanning(false);
-      }
-    };
-    
-    reader.readAsDataURL(file);
-    
-    // Reset input
-    if (e.target) {
-      e.target.value = '';
-    }
-  };
-
-  const handleScanClick = () => {
-    fileInputRef.current?.click();
-    setScanMode(true);
-  };
 
   // Show name input screen if needed
   if (showNameInput && !isRevisit) {
@@ -253,75 +198,10 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
         </div>
       )}
 
-      {/* Scan Image Button */}
-      {!scannedDish && (
-        <div className="absolute top-20 right-6 z-40 pointer-events-auto">
-          <motion.button
-            onClick={handleScanClick}
-            className="w-14 h-14 rounded-full bg-emerald-600/90 backdrop-blur-md border-2 border-emerald-400/50 flex items-center justify-center shadow-2xl hover:bg-emerald-500 transition-colors"
-            whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.05 }}
-            title="Scanner une photo de plat"
-          >
-            <Camera className="w-7 h-7 text-white" />
-          </motion.button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-        </div>
-      )}
-
-      {/* Scanning Overlay */}
-      {isScanning && (
-        <motion.div
-          className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="text-center">
-            <motion.div
-              className="w-24 h-24 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-6"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
-            <p className="text-white text-xl font-semibold mb-2">
-              Analyse de ton plat...
-            </p>
-            <p className="text-white/60 text-sm">
-              Identification du plat et recherche de produits
-            </p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Scan Error */}
-      {scanError && (
-        <motion.div
-          className="absolute top-24 left-6 right-6 z-50 bg-red-600/20 border border-red-500/50 rounded-2xl p-4 backdrop-blur-md"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="flex items-center gap-3">
-            <X className="w-5 h-5 text-red-400 flex-shrink-0" />
-            <p className="text-white text-sm">{scanError}</p>
-            <button
-              onClick={() => setScanError(null)}
-              className="ml-auto text-red-400 hover:text-red-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </motion.div>
-      )}
-
       {/* Card Stack */}
       <div className="absolute inset-0 z-10">
-        {/* Next card (background placeholder) - only show if not scanned dish */}
-        {!scannedDish && currentIndex < dishes.length - 1 && (
+        {/* Next card (background placeholder) */}
+        {currentIndex < dishes.length - 1 && (
           <div className="absolute inset-0 bg-black">
              <img
               src={dishes[currentIndex + 1].image}
@@ -339,7 +219,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
         <AnimatePresence mode="popLayout" initial={false} custom={exitDirection}>
           {currentDish && (
             <SwipeCard
-              key={scannedDish ? 'scanned' : currentDish.id}
+              key={currentDish.id}
               dish={currentDish}
               onSwipe={handleSwipe}
               custom={exitDirection}
