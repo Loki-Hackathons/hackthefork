@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight, ChefHat, Share2 } from 'lucide-react';
+import { Camera, X, Sparkles, ArrowRight, ChefHat, Share2 } from 'lucide-react';
 import type { Screen } from './MainApp';
 import { createPost } from '@/services/api';
 import type { DetectedIngredient } from '@/lib/image-analysis';
@@ -64,7 +64,6 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
           <CameraView
             key="camera"
             onCapture={handleCapture}
-            onScan={handleScan}
             fileInputRef={fileInputRef}
             onFileSelect={handleFileSelect}
           />
@@ -95,12 +94,11 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
 
 interface CameraViewProps {
   onCapture: () => void;
-  onScan: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraViewProps) {
+function CameraView({ onCapture, fileInputRef, onFileSelect }: CameraViewProps) {
   return (
     <motion.div
       className="h-full flex flex-col"
@@ -426,7 +424,7 @@ function PostPreviewView({ imageUrl, onAnalyze, onCancel }: PostPreviewViewProps
         <div className="flex-1 flex flex-col justify-end gap-4 mb-8">
           <div className="text-center mb-4">
             <h2 className="text-white text-2xl font-bold mb-2">Ready to analyze?</h2>
-            <p className="text-white/70 text-sm">We'll extract ingredients and calculate your eco-score</p>
+            <p className="text-white/70 text-sm">We&apos;ll extract ingredients and calculate your eco-score</p>
           </div>
 
           <motion.button
@@ -643,7 +641,7 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
   );
 }
 
-function RecipeView({ imageUrl, dishName, onBack }: { imageUrl: string; dishName: string; onBack: () => void }) {
+function RecipeView({ dishName, onBack }: { dishName: string; onBack: () => void }) {
   return (
     <motion.div 
       className="h-full flex flex-col bg-black p-6"
@@ -663,7 +661,7 @@ function RecipeView({ imageUrl, dishName, onBack }: { imageUrl: string; dishName
         </div>
         <h2 className="text-white text-3xl font-bold mb-4">Recipe for {dishName}</h2>
         <p className="text-white/60 text-lg max-w-xs mx-auto">
-          Recipe feature coming soon! We're working on AI-powered sustainable recipe recommendations.
+          Recipe feature coming soon! We&apos;re working on AI-powered sustainable recipe recommendations.
         </p>
       </div>
     </motion.div>
