@@ -66,7 +66,7 @@ export class PopupHandler {
           return true;
         }
         
-        // Sinon, fermer avec X
+        // Otherwise, close with X
         await this.closeGenericPopup();
         return true;
       }
@@ -94,26 +94,26 @@ export class PopupHandler {
   }
   
   /**
-   * Attendre la fin des chargements - VERSION RAPIDE
+   * Wait for loading to finish - FAST VERSION
    */
   async waitForLoadingToFinish() {
     try {
-      console.log('      ⏳ Attente chargement réseau...');
-      // Attendre que le réseau soit stable (domcontentloaded au lieu de networkidle)
+      console.log('      ⏳ Waiting for network loading...');
+      // Wait for network to be stable (domcontentloaded instead of networkidle)
       await this.page.waitForLoadState('domcontentloaded', { 
         timeout: 5000 
       });
-      console.log('      ✅ DOM chargé');
+      console.log('      ✅ DOM loaded');
       
-      // Vérifier rapidement si un loader est visible
+      // Quickly check if a loader is visible
       const loader = this.page.locator(SELECTORS.LOADING_INDICATOR).first();
       if (await loader.isVisible({ timeout: 500 })) {
-        console.log('      ⏳ Loader détecté, attente...');
+        console.log('      ⏳ Loader detected, waiting...');
         await loader.waitFor({ state: 'hidden', timeout: 3000 });
-        console.log('      ✅ Loader disparu');
+        console.log('      ✅ Loader disappeared');
       }
     } catch (e: any) {
-      console.log(`      ⚠️  Timeout chargement (ignoré): ${e.message}`);
+      console.log(`      ⚠️  Loading timeout (ignored): ${e.message}`);
     }
   }
 }

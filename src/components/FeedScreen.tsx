@@ -185,7 +185,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
   if (loading) {
     return (
       <div className="h-full w-full bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Chargement...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
@@ -194,21 +194,21 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
     return (
       <div className="h-full w-full bg-black flex items-center justify-center px-6">
         <div className="text-center max-w-md">
-          <div className="text-red-400 text-xl mb-4">Erreur</div>
+          <div className="text-red-400 text-xl mb-4">Error</div>
           <div className="text-white/70 text-sm mb-6">{error}</div>
           <div className="text-white/50 text-xs mb-4">
-            Assurez-vous que:
+            Make sure that:
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Les variables d'environnement Supabase sont configurées</li>
-              <li>Le schéma de base de données a été créé</li>
-              <li>Le bucket de stockage "meal-images" existe</li>
+              <li>Supabase environment variables are configured</li>
+              <li>The database schema has been created</li>
+              <li>The "meal-images" storage bucket exists</li>
             </ul>
           </div>
           <button
             onClick={loadPosts}
             className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
           >
-            Réessayer
+            Retry
           </button>
         </div>
       </div>
@@ -219,12 +219,12 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
     return (
       <div className="h-full w-full bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="text-white text-xl mb-4">Aucun post pour le moment</div>
+          <div className="text-white text-xl mb-4">No posts yet</div>
           <button
             onClick={() => onNavigate('camera')}
             className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
           >
-            Créer le premier post
+            Create the first post
           </button>
         </div>
       </div>
@@ -276,7 +276,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
             >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10">
-                <h2 className="text-white text-2xl font-bold">Commentaires</h2>
+                <h2 className="text-white text-2xl font-bold">Comments</h2>
                 <button
                   onClick={() => {
                     setOpenCommentsPostId(null);
@@ -292,7 +292,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                 {isLoadingComments ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-white/60">Chargement...</div>
+                    <div className="text-white/60">Loading...</div>
                   </div>
                 ) : currentPostComments.length === 0 ? (
                   <p className="text-white/60 text-center py-8">
@@ -318,7 +318,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-white font-semibold text-sm">
-                              {isOwnComment ? 'Vous' : commentUserName}
+                              {isOwnComment ? 'You' : commentUserName}
                             </span>
                             <span className="text-white/50 text-xs">{commentTimeAgo}</span>
                           </div>
@@ -487,24 +487,24 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
             {
               type: 'vegetal' as const,
               score: post.vegetal_score,
-              label: 'Végétal',
-              description: 'Pourcentage d\'ingrédients d\'origine végétale dans le plat',
+              label: 'Plant-based',
+              description: 'Percentage of plant-based ingredients in the dish',
               icon: Leaf,
               color: post.vegetal_score >= 80 ? 'emerald' : post.vegetal_score >= 60 ? 'yellow' : 'red'
             },
             {
               type: 'healthy' as const,
               score: post.health_score,
-              label: 'Santé',
-              description: 'Score nutritionnel basé sur la qualité des ingrédients',
+              label: 'Health',
+              description: 'Nutritional score based on ingredient quality',
               icon: Apple,
               color: post.health_score >= 80 ? 'emerald' : post.health_score >= 60 ? 'yellow' : 'red'
             },
             {
               type: 'carbon' as const,
               score: post.carbon_score,
-              label: 'Carbone',
-              description: 'Impact environnemental : plus le score est élevé, plus l\'empreinte carbone est faible',
+              label: 'Carbon',
+              description: 'Environmental impact: higher score means lower carbon footprint',
               icon: Cloud,
               color: post.carbon_score >= 80 ? 'emerald' : post.carbon_score >= 60 ? 'yellow' : 'red'
             }
@@ -529,7 +529,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-white text-2xl font-bold mb-1">Détails du score</h2>
+                    <h2 className="text-white text-2xl font-bold mb-1">Score Details</h2>
                   </div>
                   <button
                     onClick={() => setOpenScoreDetailsPostId(null)}
@@ -555,7 +555,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
 
                 {/* Individual Scores */}
                 <div className="space-y-4 mb-6">
-                  <h3 className="text-white text-lg font-semibold mb-4">Détails par catégorie</h3>
+                  <h3 className="text-white text-lg font-semibold mb-4">Details by Category</h3>
                   {scoreDetails.map((detail) => {
                     const Icon = detail.icon;
                     const colorClass = detail.color === 'emerald' ? 'bg-emerald-500' : detail.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500';
@@ -603,7 +603,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
                 {/* Info */}
                 <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                   <p className="text-white/70 text-sm leading-relaxed">
-                    💡 <strong className="text-white">Astuce :</strong> Pour améliorer ton score, privilégie les ingrédients locaux, de saison et d'origine végétale.
+                    💡 <strong className="text-white">Tip:</strong> To improve your score, prioritize local, seasonal, and plant-based ingredients.
                   </p>
                 </div>
               </motion.div>

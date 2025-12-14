@@ -17,7 +17,7 @@ export const CarrefourOrderButton: React.FC<CarrefourOrderButtonProps> = ({
     setMessage(null);
 
     try {
-      console.log('🛒 Démarrage de la commande Carrefour...');
+      console.log('🛒 Starting Carrefour order...');
       
       const response = await fetch('/api/start-shopping', {
         method: 'POST',
@@ -30,14 +30,14 @@ export const CarrefourOrderButton: React.FC<CarrefourOrderButtonProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('✅ Automatisation démarrée ! Le navigateur va s\'ouvrir...');
+        setMessage('✅ Automation started! The browser will open...');
         console.log('✅ Réponse du serveur:', data);
       } else {
-        setMessage('❌ Erreur: ' + (data.message || 'Impossible de démarrer l\'automatisation'));
+        setMessage('❌ Error: ' + (data.message || 'Unable to start automation'));
       }
     } catch (error) {
-      console.error('❌ Erreur lors de l\'appel API:', error);
-      setMessage('❌ Erreur de connexion au service d\'automatisation');
+      console.error('❌ Error during API call:', error);
+      setMessage('❌ Connection error to automation service');
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export const CarrefourOrderButton: React.FC<CarrefourOrderButtonProps> = ({
         textAlign: 'center',
         maxWidth: '400px'
       }}>
-        Cliquez pour ajouter automatiquement les ingrédients de votre {dishName} au panier Carrefour
+        Click to automatically add the ingredients of your {dishName} to the Carrefour cart
       </p>
     </div>
   );

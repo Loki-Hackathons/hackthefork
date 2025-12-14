@@ -6,8 +6,8 @@ import { Trophy, Users, Target, Clock, ChevronRight, Flame, TrendingUp } from 'l
 const mockChallenges = [
   {
     id: 1,
-    title: 'Semaine 100% Végé',
-    description: 'Cuisine 7 plats végétariens cette semaine',
+    title: '100% Veg Week',
+    description: 'Cook 7 vegetarian dishes this week',
     progress: 5,
     total: 7,
     reward: 500,
@@ -28,8 +28,8 @@ const mockChallenges = [
   },
   {
     id: 3,
-    title: 'Zéro Gaspi',
-    description: 'Utilise tous les ingrédients achetés',
+    title: 'Zero Waste',
+    description: 'Use all purchased ingredients',
     progress: 3,
     total: 5,
     reward: 300,
@@ -66,7 +66,7 @@ export function ChallengesScreen() {
           </div>
         </div>
         <p className="text-white/50 text-sm">
-          Relève les défis, gagne des points
+          Take on challenges, earn points
         </p>
       </div>
 
@@ -97,21 +97,21 @@ export function ChallengesScreen() {
           <div className="relative">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <div className="text-white/70 text-sm mb-1">Challenge du jour</div>
+                <div className="text-white/70 text-sm mb-1">Challenge of the day</div>
                 <h3 className="text-white text-2xl mb-2">
-                  Curry Végétarien Collectif
+                  Collective Vegetarian Curry
                 </h3>
                 <p className="text-white/80 text-sm mb-4">
-                  Tout le groupe cuisine le même plat écolo
+                  The whole group cooks the same eco-friendly dish
                 </p>
                 <div className="flex items-center gap-3 text-white/70 text-sm">
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    <span>4 amis</span>
+                    <span>4 friends</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    <span>12j restants</span>
+                    <span>12d left</span>
                   </div>
                 </div>
               </div>
@@ -129,7 +129,7 @@ export function ChallengesScreen() {
 
             <div className="flex items-center gap-3">
               <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Récompense</div>
+                <div className="text-white/70 text-xs mb-1">Reward</div>
                 <div className="text-white text-xl flex items-center gap-2">
                   <Flame className="w-5 h-5 text-yellow-400" />
                   1,500
@@ -156,9 +156,9 @@ export function ChallengesScreen() {
       {/* Weekly Leaderboard */}
       <div className="px-6 mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white text-xl">Classement</h2>
+          <h2 className="text-white text-xl">Leaderboard</h2>
           <button className="text-emerald-400 text-sm flex items-center gap-1">
-            Tout voir
+            See all
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

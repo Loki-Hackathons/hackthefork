@@ -6,26 +6,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { dishId } = body;
     
-    console.log('\n🚀 Requête reçue pour démarrer l\'automatisation Auchan');
+    console.log('\n🚀 Request received to start Auchan automation');
     
-    // Lancer l'automatisation en arrière-plan (ne pas attendre)
-    // On répond immédiatement au client
+    // Launch automation in background (don't wait)
+    // Respond immediately to client
     startShoppingAutomation(dishId || 'burger-vege').catch((error) => {
-      console.error('❌ Erreur lors de l\'automatisation:', error.message);
+      console.error('❌ Error during automation:', error.message);
     });
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Automatisation démarrée ! Le navigateur va s\'ouvrir avec votre session Auchan...' 
+      message: 'Automation started! The browser will open with your Auchan session...' 
     });
     
   } catch (error: any) {
-    console.error('❌ Erreur lors de l\'appel API:', error);
+    console.error('❌ Error during API call:', error);
     
     return NextResponse.json(
       { 
         success: false, 
-        message: error.message || 'Erreur lors du démarrage de l\'automatisation' 
+        message: error.message || 'Error starting automation' 
       },
       { status: 500 }
     );

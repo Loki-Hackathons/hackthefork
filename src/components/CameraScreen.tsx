@@ -43,7 +43,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
   };
 
   const handlePost = async () => {
-    // Le post sera créé dans PostView avec le feedback
+    // The post will be created in PostView with feedback
     setTimeout(() => {
       onNavigate('feed');
     }, 500);

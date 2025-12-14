@@ -78,9 +78,9 @@ export async function startShoppingAutomation(dishId: string = 'burger-vege') {
       timeout: CONFIG.NAVIGATION_TIMEOUT 
     });
     
-    console.log('✅ Connecté avec votre session Auchan');
+    console.log('✅ Connected with your Auchan session');
     
-    // Traiter chaque ingrédient - MODE ULTRA RAPIDE
+    // Process each ingredient - ULTRA FAST MODE
     const globalStart = Date.now();
     
     for (let i = 0; i < ingredients.length; i++) {
@@ -95,22 +95,22 @@ export async function startShoppingAutomation(dishId: string = 'burger-vege') {
         results.failed.push(result);
       }
       
-      // SUPPRIMÉ : Plus d'attente entre les produits
+      // REMOVED: No more waiting between products
     }
     
     const totalTime = Date.now() - globalStart;
-    console.log(`\n⚡ TEMPS TOTAL : ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
+    console.log(`\n⚡ TOTAL TIME: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
     
-    // Aller au panier
-    console.log('\n🛒 Redirection vers le panier...');
+    // Go to cart
+    console.log('\n🛒 Redirecting to cart...');
     await page.goto('https://www.auchan.fr/checkout/cart/', {
       waitUntil: 'networkidle',
       timeout: CONFIG.NAVIGATION_TIMEOUT
     });
     
-    // Rapport final
+    // Final report
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 RAPPORT FINAL');
+    console.log('📊 FINAL REPORT');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`✅ Succès: ${results.success.length}/${ingredients.length}`);
     console.log(`❌ Échecs: ${results.failed.length}/${ingredients.length}`);
@@ -127,7 +127,7 @@ export async function startShoppingAutomation(dishId: string = 'burger-vege') {
     
     console.log('\n🎉 Automatisation terminée ! Le navigateur reste ouvert.\n');
     
-    // Ne PAS fermer le navigateur pour la démo
+    // Do NOT close the browser for the demo
     // await browser.close();
     
     return results;
