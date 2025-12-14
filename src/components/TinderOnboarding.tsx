@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'motion/react';
 import { Heart, X } from 'lucide-react';
 import { ingredientImagePaths } from '@/utils/foodIcons';
@@ -54,6 +54,17 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const [exitDirection, setExitDirection] = useState(0);
 
   const currentDish = dishes[currentIndex];
+
+  // Preload ingredient images for current dish
+  useEffect(() => {
+    if (currentDish) {
+      currentDish.ingredients.forEach((ingredient) => {
+        const imagePath = ingredientImagePaths[ingredient.toLowerCase()] || '/food-icons/vegetables.png';
+        const img = new Image();
+        img.src = imagePath;
+      });
+    }
+  }, [currentDish]);
 
   // Helper to safely increment index or complete
   const nextCard = () => {
@@ -297,53 +308,90 @@ interface ParticleExplosionProps {
 function ParticleExplosion({ ingredients }: ParticleExplosionProps) {
   // Generate particles based on ingredients
   const particles = ingredients.flatMap((ingredient, idx) => 
-    Array(8).fill(null).map((_, i) => ({ // Increased particle count
-      id: `${idx}-${i}`,
-      ingredient,
-      imagePath: ingredientImagePaths[ingredient.toLowerCase()] || '/food-icons/vegetables.png', // Fallback
-      delay: Math.random() * 0.1,
-      angle: (Math.random() * 360) * (Math.PI / 180), // Random angle in radians
-      velocity: 300 + Math.random() * 300, // Random velocity
-      rotation: Math.random() * 360
-    }))
+    Array(8).fill(null).map((_, i) => {
+      const ingredientKey = ingredient.toLowerCase();
+      // Fallback to vegetables if not found, but keep original ingredient name for debugging/alt text
+      const imagePath = ingredientImagePaths[ingredientKey] || '/food-icons/vegetables.png';
+      
+      return {
+        id: `${idx}-${i}`,
+        ingredient,
+        imagePath,
+        delay: Math.random() * 0.1,
+        angle: (Math.random() * 360) * (Math.PI / 180), // Random angle in radians
+        velocity: 300 + Math.random() * 300, // Random velocity
+        rotation: Math.random() * 360
+      };
+    })
   );
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
       {particles.map((particle) => (
-        <motion.div
+        <ParticleImage
           key={particle.id}
-          className="absolute top-1/2 left-1/2 flex items-center justify-center"
-          initial={{ 
-            x: 0, 
-            y: 0, 
-            opacity: 0,
-            scale: 0.5,
-            rotate: 0
-          }}
-          animate={{ 
-            x: Math.cos(particle.angle) * particle.velocity,
-            y: Math.sin(particle.angle) * particle.velocity,
-            opacity: [0, 1, 1, 0],
-            scale: [0.5, 1.2, 0.8],
-            rotate: particle.rotation + 360
-          }}
-          transition={{
-            duration: 3.0, // 3 seconds
-            delay: particle.delay,
-            ease: [0.22, 1, 0.36, 1], // Custom cubic bezier for "explosive" feel
-            times: [0, 0.1, 0.8, 1]
-          }}
-        >
-          <div className="p-1">
-            <img 
-              src={particle.imagePath} 
-              alt={particle.ingredient}
-              className="w-10 h-10 object-contain drop-shadow-lg"
-            />
-          </div>
-        </motion.div>
+          particle={particle}
+        />
       ))}
     </div>
+  );
+}
+
+interface ParticleImageProps {
+  particle: {
+    id: string;
+    ingredient: string;
+    imagePath: string;
+    delay: number;
+    angle: number;
+    velocity: number;
+    rotation: number;
+  };
+}
+
+function ParticleImage({ particle }: ParticleImageProps) {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Don't render if image failed to load
+  if (imageError) {
+    return null;
+  }
+
+  return (
+    <motion.div
+      className="absolute top-1/2 left-1/2 flex items-center justify-center"
+      initial={{ 
+        x: 0, 
+        y: 0, 
+        opacity: 0,
+        scale: 0.5,
+        rotate: 0
+      }}
+      animate={{ 
+        x: Math.cos(particle.angle) * particle.velocity,
+        y: Math.sin(particle.angle) * particle.velocity,
+        opacity: imageLoaded ? [0, 1, 1, 0] : 0,
+        scale: imageLoaded ? [0.5, 1.2, 0.8] : 0.5,
+        rotate: particle.rotation + 360
+      }}
+      transition={{
+        duration: 3.0, // 3 seconds
+        delay: particle.delay,
+        ease: [0.22, 1, 0.36, 1], // Custom cubic bezier for "explosive" feel
+        times: [0, 0.1, 0.8, 1]
+      }}
+    >
+      <div className="p-1">
+        <img 
+          src={particle.imagePath} 
+          alt={particle.ingredient}
+          className="w-10 h-10 object-contain drop-shadow-lg"
+          onError={() => setImageError(true)}
+          onLoad={() => setImageLoaded(true)}
+          style={{ display: imageLoaded ? 'block' : 'none' }}
+        />
+      </div>
+    </motion.div>
   );
 }
