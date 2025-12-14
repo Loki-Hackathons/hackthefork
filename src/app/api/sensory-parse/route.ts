@@ -120,7 +120,7 @@ Now parse this comment:
 
     // Use Gemini 3 Pro Preview for advanced NLP
     const payload = {
-      model: "blackboxai/google/gemini-3-pro-preview",
+      model: "blackboxai/anthropic/claude-3.5-haiku",
       messages: [
         {
           role: "user",
