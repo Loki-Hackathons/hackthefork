@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
@@ -22,18 +23,39 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Try to select name and avatar fields, but handle gracefully if columns don't exist
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, created_at')
+      .select('id, name, created_at, avatar_image_url, avatar')
       .eq('id', userId)
       .single();
 
     if (error) {
+      // If column doesn't exist, return user without those fields
+      if (error.code === '42703') {
+        console.warn('Some user columns do not exist, trying basic select');
+        const { data: basicUser, error: basicError } = await supabase
+          .from('users')
+          .select('id, created_at')
+          .eq('id', userId)
+          .single();
+        
+        if (basicError) {
+          console.error('Error fetching user:', basicError);
+          throw basicError;
+        }
+        
+        return NextResponse.json({ 
+          user: { ...basicUser, name: null, avatar_image_url: null, avatar: null } 
+        });
+      }
       console.error('Error fetching user:', error);
       throw error;
     }
 
-    return NextResponse.json({ user: user || { id: userId, name: null, created_at: null } });
+    return NextResponse.json({ 
+      user: user || { id: userId, name: null, created_at: null, avatar_image_url: null, avatar: null } 
+    });
   } catch (error: any) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
@@ -43,11 +65,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/user - Update user info (e.g., name)
+// PATCH /api/user - Update user info (e.g., name, avatar)
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { user_id, name } = body;
+    const formData = await request.formData();
+    const user_id = formData.get('user_id') as string;
+    const name = formData.get('name') as string | null;
+    const avatar = formData.get('avatar') as string | null;
+    const avatar_image = formData.get('avatar_image') as File | null;
+    const avatar_image_base64 = formData.get('avatar_image_base64') as string | null;
 
     if (!user_id) {
       return NextResponse.json(
@@ -64,30 +90,138 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update user name
+    let avatar_image_url: string | null = null;
+
+    // Handle avatar image upload (either File or base64)
+    if (avatar_image) {
+      // Upload File to Supabase Storage
+      const arrayBuffer = await avatar_image.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const fileExt = avatar_image.name.split('.').pop() || 'jpg';
+      const fileName = `avatars/${user_id}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('meal-images') // Reuse meal-images bucket, or create 'avatars' bucket
+        .upload(fileName, buffer, {
+          contentType: avatar_image.type,
+          upsert: true // Allow overwriting existing avatar
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const uploadedPath = uploadData?.path || fileName;
+      const urlResponse = supabase.storage
+        .from('meal-images')
+        .getPublicUrl(uploadedPath);
+      
+      avatar_image_url = urlResponse.data.publicUrl;
+    } else if (avatar_image_base64) {
+      // Handle base64 image upload
+      // Convert base64 to buffer
+      const base64Data = avatar_image_base64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      // Determine file extension from base64 data URL
+      const mimeMatch = avatar_image_base64.match(/^data:image\/(\w+);base64,/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'jpg';
+      const fileExt = mimeType === 'jpeg' ? 'jpg' : mimeType;
+      const fileName = `avatars/${user_id}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('meal-images')
+        .upload(fileName, buffer, {
+          contentType: `image/${mimeType}`,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const uploadedPath = uploadData?.path || fileName;
+      const urlResponse = supabase.storage
+        .from('meal-images')
+        .getPublicUrl(uploadedPath);
+      
+      avatar_image_url = urlResponse.data.publicUrl;
+    }
+
+    // Prepare update data (handle gracefully if columns don't exist)
+    const updateData: any = {};
+    if (name !== null) updateData.name = name || null;
+    if (avatar !== null) updateData.avatar = avatar || null;
+    if (avatar_image_url !== null) {
+      updateData.avatar_image_url = avatar_image_url;
+      // Clear emoji avatar when image is uploaded
+      if (avatar_image_url) updateData.avatar = null;
+    } else if (avatar_image_base64 === null && avatar_image === null && avatar !== null) {
+      // If setting emoji avatar, clear image URL
+      updateData.avatar_image_url = null;
+    }
+
+    // Update user (handle gracefully if columns don't exist)
     const { data: user, error } = await supabase
       .from('users')
-      .update({ name: name || null })
+      .update(updateData)
       .eq('id', user_id)
-      .select()
+      .select('id, created_at, name, avatar_image_url, avatar')
       .single();
 
     if (error) {
+      // If column doesn't exist, try to update/create user with basic fields
+      if (error.code === '42703') {
+        console.warn('Some user columns do not exist, creating/updating user with basic fields');
+        // Try to upsert user with basic fields
+        const basicData: any = { id: user_id, created_at: new Date().toISOString() };
+        if (name !== null) basicData.name = name || null;
+        
+        const { data: newUser, error: upsertError } = await supabase
+          .from('users')
+          .upsert(basicData, { onConflict: 'id' })
+          .select('id, created_at')
+          .single();
+        
+        if (upsertError) throw upsertError;
+        return NextResponse.json({ user: { ...newUser, name: basicData.name || null, avatar_image_url: null, avatar: null } });
+      }
+      
       // If user doesn't exist, create it
       if (error.code === 'PGRST116') {
+        const insertData: any = { id: user_id };
+        if (name !== null) insertData.name = name || null;
+        if (avatar !== null) insertData.avatar = avatar || null;
+        if (avatar_image_url !== null) insertData.avatar_image_url = avatar_image_url || null;
+        
         const { data: newUser, error: createError } = await supabase
           .from('users')
-          .insert({ id: user_id, name: name || null })
-          .select()
+          .insert(insertData)
+          .select('id, created_at, name, avatar_image_url, avatar')
           .single();
 
-        if (createError) throw createError;
-        return NextResponse.json({ user: newUser });
+        if (createError) {
+          // If columns don't exist, create with basic fields
+          if (createError.code === '42703') {
+            const { data: basicUser, error: basicCreateError } = await supabase
+              .from('users')
+              .insert({ id: user_id })
+              .select('id, created_at')
+              .single();
+            
+            if (basicCreateError) throw basicCreateError;
+            return NextResponse.json({ user: { ...basicUser, name: name || null, avatar_image_url: null, avatar: null } });
+          }
+          throw createError;
+        }
+        return NextResponse.json({ user: newUser || { id: user_id, name: name || null, created_at: null, avatar_image_url: avatar_image_url || null, avatar: avatar || null } });
       }
       throw error;
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user: user || { id: user_id, name: name || null, created_at: null, avatar_image_url: avatar_image_url || null, avatar: avatar || null } });
   } catch (error: any) {
     console.error('Error updating user:', error);
     return NextResponse.json(

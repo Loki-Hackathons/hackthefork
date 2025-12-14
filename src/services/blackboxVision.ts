@@ -1,5 +1,6 @@
 // services/blackboxVision.ts
-// Client-side function that calls Next.js API route (bypasses CORS)
+// Client-side function that calls the unified /api/analyze endpoint
+// Used by recipeEngine.ts - extracts just the dishName from the full analysis
 
 export interface AIAnalysisResult {
   dishName: string;
@@ -7,11 +8,11 @@ export interface AIAnalysisResult {
 
 export async function analyzeImageWithBlackbox(base64Image: string): Promise<AIAnalysisResult> {
   try {
-    console.log("🤖 Calling Blackbox AI API...");
+    console.log("🤖 Calling unified analyze API...");
     
-    // Call our Next.js API route instead of calling Blackbox directly
-    // This bypasses CORS and keeps the API key secure on the server
-    const response = await fetch('/api/analyze-food', {
+    // Use the unified /api/analyze endpoint (same as main workflow)
+    // This extracts dishName, ingredients, and scores, but we only need dishName for recipes
+    const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,7 +36,8 @@ export async function analyzeImageWithBlackbox(base64Image: string): Promise<AIA
       throw new Error("AI did not return a valid meal name");
     }
 
-    return result as AIAnalysisResult;
+    // Return only dishName (recipe engine doesn't need ingredients/scores)
+    return { dishName: result.dishName };
 
   } catch (error: any) {
     console.error("Blackbox Vision Error:", error);
