@@ -17,6 +17,7 @@ function generateUserId(): string {
 }
 
 export function getUserId(): string {
+  if (typeof window === 'undefined') return '';
   let userId = Cookies.get(USER_ID_COOKIE);
   
   if (!userId) {
@@ -31,6 +32,7 @@ export function getUserId(): string {
 }
 
 export function setUserId(userId: string): void {
+  if (typeof window === 'undefined') return;
   Cookies.set(USER_ID_COOKIE, userId, { 
     expires: COOKIE_EXPIRY_DAYS,
     sameSite: 'lax'
