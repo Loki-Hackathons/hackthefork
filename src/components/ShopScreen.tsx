@@ -153,25 +153,22 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
     }
   };
 
-  const totalPrice = ingredients
-    .filter(ing => ing.checked)
-    .reduce((sum, ing) => sum + ing.price, 0);
+  // Calculer Avg Score (moyenne des scores des ingrédients cochés)
+  const checkedIngredients = ingredients.filter(ing => ing.checked);
+  const avgScore = checkedIngredients.length > 0
+    ? Math.round(checkedIngredients.reduce((sum, ing) => sum + ing.score, 0) / checkedIngredients.length)
+    : 0;
 
-      const checkedIngredients = ingredients.filter(ing => ing.checked);
-      const avgScore = checkedIngredients.length > 0
-        ? Math.round(
-            checkedIngredients.reduce((sum, ing) => sum + ing.score, 0) / 
-            checkedIngredients.length
-          )
-        : 0;
-
-  const co2Saved = 2.4;
+  // Calculer CO₂ Saved (basé sur les ingrédients cochés)
+  const co2Saved = checkedIngredients.length > 0
+    ? (checkedIngredients.length * 0.4).toFixed(1) // 0.4kg par ingrédient
+    : '0.0';
 
   return (
-    <div className="h-full bg-black flex flex-col overflow-hidden">
-      {/* Header with recipe */}
-      <div className="pt-12 pb-4 px-6">
-        <div className="flex gap-4 items-start mb-4">
+    <div className="h-full bg-black overflow-y-auto">
+      {/* Header sticky */}
+      <div className="pt-12 pb-4 px-6 sticky top-0 bg-black z-10">
+        <div className="flex gap-4 items-start">
           <button 
             onClick={() => onNavigate('feed')}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform"
@@ -187,10 +184,13 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
             </p>
           </div>
         </div>
-        
+      </div>
+
+      {/* Tout le contenu dans un seul conteneur avec padding */}
+      <div className="px-6 pb-6">
         {/* Image du plat si disponible */}
         {postImageUrl && (
-          <div className="mb-4 rounded-2xl overflow-hidden">
+          <div className="mb-6 rounded-2xl overflow-hidden">
             <img 
               src={postImageUrl} 
               alt="Plat" 
@@ -198,10 +198,6 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
             />
           </div>
         )}
-      </div>
-
-      {/* Ingredients list */}
-      <div className="flex-1 overflow-y-auto px-6 pb-4">
         {loading && (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -224,7 +220,8 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
           </div>
         )}
         
-        <div className="space-y-3">
+        {/* Liste des ingrédients */}
+        <div className="space-y-3 mb-6">
           {ingredients.map((ingredient) => (
             <div key={ingredient.id}>
               <motion.div
@@ -258,9 +255,6 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
                       <h3 className={`text-white ${!ingredient.checked && 'opacity-40'}`}>
                         {ingredient.name}
                       </h3>
-                      <span className={`text-white flex-shrink-0 ${!ingredient.checked && 'opacity-40'}`}>
-                        {ingredient.price.toFixed(2)}€
-                      </span>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
@@ -321,9 +315,6 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
                               </span>
                             </div>
                           </div>
-                          <span className="text-white flex-shrink-0 text-lg">
-                            {ingredient.alternative.price.toFixed(2)}€
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -346,66 +337,120 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
               </motion.div>
             </div>
           ))}
+
+          {/* Order Message - même format si présent */}
+          {orderMessage && (
+            <motion.div
+              className={`relative bg-white/5 backdrop-blur-sm rounded-2xl p-4 border ${
+                orderMessage.includes('✅') 
+                  ? 'border-emerald-500/50 bg-emerald-500/10'
+                  : 'border-red-500/50 bg-red-500/10'
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              layout
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex-shrink-0">
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center ${
+                    orderMessage.includes('✅') 
+                      ? 'border-emerald-600 bg-emerald-700'
+                      : 'border-red-600 bg-red-700'
+                  }`}>
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`${
+                    orderMessage.includes('✅') ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {orderMessage}
+                  </h3>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Avg Score - même format que les ingrédients */}
+          <motion.div
+            className="relative bg-emerald-500/20 backdrop-blur-sm rounded-2xl p-4 border border-emerald-500/30"
+            layout
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-1 flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg border-2 border-emerald-400/50 bg-emerald-500/30 flex items-center justify-center">
+                  <Leaf className="w-4 h-4 text-emerald-300" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <h3 className="text-emerald-100">Avg Score</h3>
+                    <p className="text-emerald-200/70 text-xs mt-1">Moyenne des scores</p>
+                  </div>
+                  <span className="text-emerald-100 flex-shrink-0 text-2xl font-bold">
+                    {avgScore}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* CO₂ Saved - même format que les ingrédients */}
+          <motion.div
+            className="relative bg-blue-500/20 backdrop-blur-sm rounded-2xl p-4 border border-blue-500/30"
+            layout
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-1 flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg border-2 border-blue-400/50 bg-blue-500/30 flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-blue-300" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <h3 className="text-blue-100">CO₂ Saved</h3>
+                    <p className="text-blue-200/70 text-xs mt-1">Émissions évitées</p>
+                  </div>
+                  <span className="text-blue-100 flex-shrink-0 text-2xl font-bold">
+                    {co2Saved}kg
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Order Button - fond blanc */}
+          <motion.div
+            className="relative bg-white rounded-2xl p-6 border border-white/20 shadow-xl"
+            layout
+          >
+            <button 
+              onClick={handleOrder}
+              disabled={orderLoading}
+              className="w-full"
+            >
+              <div className="flex items-start gap-4">
+                <div className="mt-1 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg border-2 border-black/20 bg-black/5 flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-black" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="text-black text-xl font-bold">{orderLoading ? 'Loading...' : 'Order'}</h3>
+                      <p className="text-black/60 text-sm mt-1">Auchan Drive</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </motion.div>
         </div>
       </div>
-
-      {/* Bottom sticky bar */}
-      <motion.div 
-        className="bg-black/95 backdrop-blur-lg border-t border-white/10 p-6"
-        layout
-      >
-        {/* Stats */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Leaf className="w-4 h-4 text-emerald-400" />
-              <span className="text-white/50 text-sm">Avg Score</span>
-            </div>
-            <div className="text-white text-3xl">{avgScore}</div>
-          </div>
-          <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="w-4 h-4 text-blue-400" />
-              <span className="text-white/50 text-sm">CO₂ Saved</span>
-            </div>
-            <div className="text-white text-3xl">{co2Saved}kg</div>
-          </div>
-        </div>
-
-        {/* Order Message */}
-        {orderMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className={`mb-4 p-4 rounded-xl ${
-              orderMessage.includes('✅') 
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-            }`}
-          >
-            {orderMessage}
-          </motion.div>
-        )}
-
-        {/* CTA Button */}
-        <button 
-          onClick={handleOrder}
-          disabled={orderLoading}
-          className="w-full py-5 bg-white text-black rounded-2xl flex items-center justify-between px-6 shadow-xl active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="flex items-center gap-3">
-            <ShoppingCart className="w-6 h-6" />
-            <div className="text-left">
-              <div className="text-sm">{orderLoading ? 'Loading...' : 'Order'}</div>
-              <div className="text-xs opacity-60">Auchan Drive</div>
-            </div>
-          </div>
-          <div className="text-3xl">
-            {totalPrice.toFixed(2)}€
-          </div>
-        </button>
-      </motion.div>
     </div>
   );
 }
