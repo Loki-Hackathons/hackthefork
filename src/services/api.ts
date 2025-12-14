@@ -197,7 +197,7 @@ export async function fetchPosts(): Promise<Post[]> {
     const data = await response.json();
     const posts: Post[] = data.posts || [];
     
-    // Check upvote status for each post
+    // Check upvote status for each post (gracefully handle failures)
     const userId = getUserId();
     const postsWithUpvotes = await Promise.all(
       posts.map(async (post) => {
@@ -209,8 +209,10 @@ export async function fetchPosts(): Promise<Post[]> {
             const upvoteData = await upvoteResponse.json();
             return { ...post, is_upvoted: upvoteData.upvoted || false };
           }
+          // If response is not ok, just continue with is_upvoted: false
         } catch (error) {
-          console.error('Error checking upvote status:', error);
+          // Silently handle errors - just default to not upvoted
+          console.warn('Could not check upvote status for post:', post.id);
         }
         return { ...post, is_upvoted: false };
       })

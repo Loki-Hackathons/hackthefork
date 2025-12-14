@@ -13,10 +13,9 @@ export async function GET(request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json(
-        { error: 'Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY' },
-        { status: 500 }
-      );
+      // Return empty array instead of error to prevent Feed from crashing
+      console.warn('Supabase not configured. Returning empty posts array.');
+      return NextResponse.json({ posts: [] });
     }
 
     // First, get all posts

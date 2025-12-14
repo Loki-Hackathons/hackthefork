@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'motion/react';
-import { Heart, X } from 'lucide-react';
+import { Heart, X, Camera, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { ingredientImagePaths } from '@/utils/foodIcons';
+import { analyzeImageWithBlackbox } from '@/services/blackboxVision';
+import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
 
 interface TinderOnboardingProps {
   onComplete: () => void;
@@ -52,8 +54,22 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const [particleKey, setParticleKey] = useState(0); // Key to force re-render of particles
   // We track the exit direction: 1 for right, -1 for left
   const [exitDirection, setExitDirection] = useState(0);
+  
+  // Image scanning state
+  const [scanMode, setScanMode] = useState(false);
+  const [scannedDish, setScannedDish] = useState<RecommendedDish | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const currentDish = dishes[currentIndex];
+  const currentDish = scannedDish ? {
+    id: 'scanned',
+    name: scannedDish.dishName,
+    image: scannedDish.products[0]?.image || dishes[0]?.image || 'https://images.unsplash.com/photo-1510035618584-c442b241abe7',
+    ingredients: scannedDish.products.map(p => p.name.split(' ')[0]).slice(0, 3),
+    score: scannedDish.totalScore,
+    products: scannedDish.products
+  } : dishes[currentIndex];
 
   // Helper to safely increment index or complete
   const nextCard = () => {
@@ -87,9 +103,58 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       }, 0);
     }
 
+    // If it's a scanned dish, reset scan mode after swipe
+    if (scannedDish) {
+      setScannedDish(null);
+      setScanMode(false);
+      return;
+    }
+
     // Immediately trigger next card
     // The component will unmount and the exit animation will play thanks to AnimatePresence
     nextCard();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setScanError(null);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      console.log("📸 Image loaded, starting analysis...");
+      
+      try {
+        // Analyze image and get Food Facts recommendations
+        console.log("🚀 Calling processDishPhoto...");
+        const foodFactsResult = await processDishPhoto(base64String);
+        console.log("✅ Analysis complete! Result:", foodFactsResult);
+        setScannedDish(foodFactsResult);
+        setScanMode(false);
+        setIsScanning(false);
+      } catch (error: any) {
+        console.error('❌ Scan error:', error);
+        console.error('Error message:', error?.message);
+        console.error('Error stack:', error?.stack);
+        setScanError(error?.message || "Échec de l'analyse. Essaye avec une photo plus claire.");
+        setIsScanning(false);
+      }
+    };
+    
+    reader.readAsDataURL(file);
+    
+    // Reset input
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  const handleScanClick = () => {
+    fileInputRef.current?.click();
+    setScanMode(true);
   };
 
   if (!currentDish) {
@@ -100,7 +165,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden">
       {/* Header */}
       {!isRevisit && (
-        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-6 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-6 bg-gradient-to-b from-black/80 to-transparent">
           <h2 className="text-white text-2xl text-center mb-1 font-bold">
             Discover Dishes
           </h2>
@@ -122,10 +187,75 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
         </div>
       )}
 
+      {/* Scan Image Button */}
+      {!scannedDish && (
+        <div className="absolute top-20 right-6 z-40 pointer-events-auto">
+          <motion.button
+            onClick={handleScanClick}
+            className="w-14 h-14 rounded-full bg-emerald-600/90 backdrop-blur-md border-2 border-emerald-400/50 flex items-center justify-center shadow-2xl hover:bg-emerald-500 transition-colors"
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            title="Scanner une photo de plat"
+          >
+            <Camera className="w-7 h-7 text-white" />
+          </motion.button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+        </div>
+      )}
+
+      {/* Scanning Overlay */}
+      {isScanning && (
+        <motion.div
+          className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="text-center">
+            <motion.div
+              className="w-24 h-24 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-6"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <p className="text-white text-xl font-semibold mb-2">
+              Analyse de ton plat...
+            </p>
+            <p className="text-white/60 text-sm">
+              Identification du plat et recherche de produits
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Scan Error */}
+      {scanError && (
+        <motion.div
+          className="absolute top-24 left-6 right-6 z-50 bg-red-600/20 border border-red-500/50 rounded-2xl p-4 backdrop-blur-md"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-3">
+            <X className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <p className="text-white text-sm">{scanError}</p>
+            <button
+              onClick={() => setScanError(null)}
+              className="ml-auto text-red-400 hover:text-red-300"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Card Stack */}
       <div className="absolute inset-0 z-10">
-        {/* Next card (background placeholder) */}
-        {currentIndex < dishes.length - 1 && (
+        {/* Next card (background placeholder) - only show if not scanned dish */}
+        {!scannedDish && currentIndex < dishes.length - 1 && (
           <div className="absolute inset-0 bg-black">
              <img
               src={dishes[currentIndex + 1].image}
@@ -141,12 +271,14 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
 
         {/* Current card with AnimatePresence */}
         <AnimatePresence mode="popLayout" initial={false} custom={exitDirection}>
-          <SwipeCard
-            key={currentDish.id}
-            dish={currentDish}
-            onSwipe={handleSwipe}
-            custom={exitDirection}
-          />
+          {currentDish && (
+            <SwipeCard
+              key={scannedDish ? 'scanned' : currentDish.id}
+              dish={currentDish}
+              onSwipe={handleSwipe}
+              custom={exitDirection}
+            />
+          )}
         </AnimatePresence>
       </div>
       
@@ -178,7 +310,19 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
 }
 
 interface SwipeCardProps {
-  dish: typeof dishes[0];
+  dish: typeof dishes[0] | {
+    id: string;
+    name: string;
+    image: string;
+    ingredients: string[];
+    score?: number;
+    products?: Array<{
+      name: string;
+      brand: string;
+      image: string;
+      ecoScore?: string;
+    }>;
+  };
   onSwipe: (direction: 'left' | 'right') => void;
   custom?: number;
 }
@@ -253,10 +397,25 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
 
       {/* Dish info */}
       <div className="absolute bottom-32 left-0 right-0 px-8 pb-4 z-10 pointer-events-none">
-        <h3 className="text-white text-3xl mb-3 drop-shadow-lg font-bold tracking-tight">
-          {dish.name}
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <h3 className="text-white text-3xl drop-shadow-lg font-bold tracking-tight flex-1">
+            {dish.name}
+          </h3>
+          {'score' in dish && dish.score !== undefined && (
+            <div className={`px-3 py-1.5 rounded-xl shadow-lg ${
+              dish.score >= 80 ? 'bg-emerald-600' :
+              dish.score >= 60 ? 'bg-yellow-500' :
+              'bg-red-500'
+            }`}>
+              <div className="flex items-center gap-1">
+                <Sparkles className="w-4 h-4 text-white" />
+                <span className="text-white text-lg font-bold">{dish.score}</span>
+                <span className="text-white/80 text-xs">/100</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {dish.ingredients.map((ingredient, idx) => (
             <span
               key={idx}
@@ -266,6 +425,41 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
             </span>
           ))}
         </div>
+        {'products' in dish && dish.products && dish.products.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-white/80 text-xs font-medium mb-2">Produits recommandés (Open Food Facts):</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {dish.products.slice(0, 3).map((product, idx) => (
+                <div
+                  key={idx}
+                  className="flex-shrink-0 bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 min-w-[100px]"
+                >
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-16 h-16 rounded-lg object-cover mb-1"
+                    />
+                  )}
+                  <p className="text-white text-[10px] font-semibold truncate mb-0.5">{product.name}</p>
+                  <p className="text-white/60 text-[9px] truncate">{product.brand}</p>
+                  {product.ecoScore && product.ecoScore !== 'unknown' && (
+                    <div className="mt-1">
+                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
+                        product.ecoScore === 'a' ? 'bg-emerald-600 text-white' :
+                        product.ecoScore === 'b' ? 'bg-green-500 text-white' :
+                        product.ecoScore === 'c' ? 'bg-yellow-500 text-black' :
+                        'bg-orange-500 text-white'
+                      }`}>
+                        Eco: {product.ecoScore.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Swipe indicators */}

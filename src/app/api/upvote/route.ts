@@ -4,6 +4,12 @@ import { supabase } from '@/lib/supabase';
 // POST /api/upvote - Toggle upvote on a post
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return false (not upvoted) to prevent errors
+      return NextResponse.json({ upvoted: false });
+    }
+
     const { post_id, user_id } = await request.json();
 
     if (!post_id || !user_id) {
@@ -57,6 +63,12 @@ export async function POST(request: NextRequest) {
 // GET /api/upvote?post_id=...&user_id=... - Check if user upvoted
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      // Return false (not upvoted) to prevent errors
+      return NextResponse.json({ upvoted: false });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const post_id = searchParams.get('post_id');
     const user_id = searchParams.get('user_id');
