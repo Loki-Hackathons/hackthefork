@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, Scan, X, Sparkles, Check, Image } from 'lucide-react';
 import type { Screen } from './MainApp';
-import { analyzeMeal, type MealAnalysisResult } from '@/services/api';
+import { analyzeMeal, createPost, type MealAnalysisResult } from '@/services/api';
 import { DishScanner } from './DishScanner';
 import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
 
@@ -39,7 +39,8 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
     setMode('scan');
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
+    // Le post sera créé dans PostView avec le feedback
     setTimeout(() => {
       onNavigate('feed');
     }, 500);
@@ -233,6 +234,9 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
   const [currentImageFile, setCurrentImageFile] = useState<File>(imageFile);
   const [error, setError] = useState<string | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState<string>('');
 
   useEffect(() => {
     setAnalysisResult(null);
@@ -268,6 +272,10 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
       } finally {
         setIsCalculating(false);
         setIsProcessingFoodFacts(false);
+        // Afficher le formulaire de feedback une fois l'analyse terminée
+        if (!error) {
+          setShowFeedback(true);
+        }
       }
     };
     
@@ -512,6 +520,76 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
+      {/* Formulaire de feedback */}
+      {showFeedback && !isCalculating && analysisResult && (
+        <div className="px-6 mb-6">
+          <motion.div
+            className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              Donne ton avis
+            </h3>
+            
+            {/* Note sur 5 */}
+            <div className="mb-6">
+              <label className="text-white/80 text-sm mb-3 block">
+                Note sur 5
+              </label>
+              <div className="flex gap-3">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <motion.button
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all ${
+                      rating && star <= rating
+                        ? 'bg-yellow-500 text-white scale-110'
+                        : 'bg-white/10 text-white/40 hover:bg-white/20'
+                    }`}
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    ⭐
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Commentaire */}
+            <div className="mb-4">
+              <label className="text-white/80 text-sm mb-3 block">
+                Commentaire (optionnel)
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Dis-nous ce que tu en penses..."
+                className="w-full bg-white/5 border border-white/20 rounded-2xl p-4 text-white placeholder-white/40 resize-none focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-colors"
+                rows={3}
+                maxLength={200}
+              />
+              <p className="text-white/40 text-xs mt-2 text-right">
+                {comment.length}/200
+              </p>
+            </div>
+
+            {/* Bouton pour continuer */}
+            <motion.button
+              onClick={() => {
+                // Le feedback est optionnel, on peut continuer même sans note
+                setShowFeedback(false);
+              }}
+              className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-2xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.95 }}
+            >
+              {rating ? `Continuer avec ${rating}⭐` : 'Passer'}
+            </motion.button>
+          </motion.div>
+        </div>
+      )}
+
       <div className="px-6 flex-1 pb-6">
         <AnimatePresence mode="wait">
           {isCalculating ? (
@@ -588,12 +666,27 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
 
       <div className="p-6 pt-0 sticky bottom-0 bg-black/95 backdrop-blur-sm">
         <motion.button
-          onClick={onPost}
-          disabled={isCalculating || !analysisResult}
+          onClick={async () => {
+            if (!showFeedback && analysisResult) {
+              // Créer le post avec le feedback
+              try {
+                await createPost(currentImageFile, {
+                  rating: rating,
+                  comment: comment
+                });
+                onPost();
+              } catch (error) {
+                console.error('Error creating post:', error);
+                // Continuer quand même pour ne pas bloquer l'utilisateur
+                onPost();
+              }
+            }
+          }}
+          disabled={isCalculating || !analysisResult || showFeedback}
           className="w-full py-5 bg-white text-black rounded-2xl text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-2xl"
           whileTap={{ scale: 0.95 }}
         >
-          Partager avec ta squad
+          {showFeedback ? 'Complète le feedback pour continuer' : 'Partager avec ta squad'}
         </motion.button>
       </div>
     </motion.div>
