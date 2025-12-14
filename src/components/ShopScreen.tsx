@@ -48,20 +48,32 @@ export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps
         setLoading(true);
         setError(null);
 
-        // Forcer la ré-analyse pour toujours avoir les bons ingrédients
-        // On pourrait aussi vérifier si fromCache=true et demander à l'utilisateur
-        const response = await fetch(`/api/analyze-ingredients?post_id=${postId}&force=true`);
+        // D'abord, essayer de charger depuis le cache (rapide)
+        let response = await fetch(`/api/analyze-ingredients?post_id=${postId}&force=false`);
         
         if (!response.ok) {
           throw new Error('Failed to load ingredients');
         }
 
-        const data = await response.json();
+        let data = await response.json();
         
         console.log('Ingredients loaded:', data.ingredients, 'fromCache:', data.fromCache);
         
+        // Si aucun ingrédient en cache, alors forcer l'analyse (lent mais nécessaire)
+        if (!data.fromCache && (!data.ingredients || data.ingredients.length === 0)) {
+          console.log('No cached ingredients found, forcing analysis...');
+          response = await fetch(`/api/analyze-ingredients?post_id=${postId}&force=true`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to analyze ingredients');
+          }
+          
+          data = await response.json();
+          console.log('Ingredients after forced analysis:', data.ingredients);
+        }
+        
         // Transformer les ingrédients de la base de données en format UI
-        const transformedIngredients: Ingredient[] = data.ingredients.map((ing: any, index: number) => ({
+        const transformedIngredients: Ingredient[] = (data.ingredients || []).map((ing: any, index: number) => ({
           id: index + 1,
           name: ing.name,
           price: Math.random() * 5 + 1, // Prix aléatoire pour la démo
