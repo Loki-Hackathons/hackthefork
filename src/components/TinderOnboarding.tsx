@@ -229,7 +229,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       </div>
       
       {/* Action buttons */}
-      <div className="absolute bottom-12 left-0 right-0 z-40 flex justify-center items-center gap-12 pointer-events-none">
+      <div className="absolute bottom-28 left-0 right-0 z-40 flex justify-center items-center gap-12 pointer-events-none">
           <motion.button
             onClick={() => handleSwipe('left')}
             className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border-2 border-red-500/50 flex items-center justify-center shadow-xl pointer-events-auto transition-colors hover:bg-black/80"
@@ -342,7 +342,7 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
 
       {/* Dish info */}
-      <div className="absolute bottom-32 left-0 right-0 px-8 pb-4 z-10 pointer-events-none">
+      <div className="absolute bottom-56 left-0 right-0 px-8 pb-4 z-10 pointer-events-none">
         <div className="flex items-start justify-between gap-4 mb-3">
           <h3 className="text-white text-3xl drop-shadow-lg font-bold tracking-tight flex-1">
             {dish.name}

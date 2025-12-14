@@ -606,7 +606,7 @@ function FeedPost({
   );
 
   return (
-    <div className="relative h-screen w-screen snap-start snap-always">
+    <div className="relative h-full w-screen snap-start snap-always">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img

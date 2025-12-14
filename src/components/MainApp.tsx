@@ -43,9 +43,9 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
   }
 
   return (
-    <div className="h-screen w-screen bg-black overflow-hidden flex flex-col">
+    <div className="h-[100dvh] w-screen bg-black overflow-hidden flex flex-col">
       {/* Main content area */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 w-full overflow-hidden relative">
         {currentScreen === 'feed' && <FeedScreen onNavigate={handleNavigateWithPost} />}
         {currentScreen === 'swipe' && <TinderOnboarding isRevisit={true} onComplete={() => {}} />}
         {currentScreen === 'camera' && <CameraScreen onNavigate={setCurrentScreen} />}
@@ -62,7 +62,11 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+      {!['shop', 'messages'].includes(currentScreen) && (
+        <div className="w-full z-50">
+          <BottomNav currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+        </div>
+      )}
     </div>
   );
 }
