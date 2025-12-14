@@ -7,6 +7,8 @@ const ONBOARDING_COMPLETE_COOKIE = 'htf_onboarding_complete';
 const USER_NAME_COOKIE = 'htf_user_name';
 const USER_AVATAR_COOKIE = 'htf_user_avatar';
 const USER_AVATAR_IMAGE_COOKIE = 'htf_user_avatar_image'; // Base64 image data
+const PREFERENCES_COMPLETE_COOKIE = 'htf_preferences_complete';
+const LIKED_DISHES_COOKIE = 'htf_liked_dishes';
 const COOKIE_EXPIRY_DAYS = 365;
 
 function generateUserId(): string {
@@ -138,4 +140,36 @@ export function removeUserAvatarImage(): void {
   if (typeof window === 'undefined') return;
   Cookies.remove(USER_AVATAR_IMAGE_COOKIE);
   localStorage.removeItem(USER_AVATAR_IMAGE_COOKIE);
+}
+
+export function arePreferencesComplete(): boolean {
+  if (typeof window === 'undefined') return false;
+  return Cookies.get(PREFERENCES_COMPLETE_COOKIE) === 'true';
+}
+
+export function setPreferencesComplete(complete: boolean): void {
+  if (typeof window === 'undefined') return;
+  Cookies.set(PREFERENCES_COMPLETE_COOKIE, complete ? 'true' : 'false', { 
+    expires: COOKIE_EXPIRY_DAYS,
+    sameSite: 'lax'
+  });
+}
+
+export function getLikedDishes(): string[] {
+  if (typeof window === 'undefined') return [];
+  const liked = Cookies.get(LIKED_DISHES_COOKIE);
+  if (!liked) return [];
+  try {
+    return JSON.parse(liked);
+  } catch {
+    return [];
+  }
+}
+
+export function setLikedDishes(liked: string[]): void {
+  if (typeof window === 'undefined') return;
+  Cookies.set(LIKED_DISHES_COOKIE, JSON.stringify(liked), { 
+    expires: COOKIE_EXPIRY_DAYS,
+    sameSite: 'lax'
+  });
 }

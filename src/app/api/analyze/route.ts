@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { DetectedIngredient } from '@/lib/image-analysis';
+import { supabase } from '@/lib/supabase';
 
 const BLACKBOX_API_URL = "https://api.blackbox.ai/chat/completions";
 
@@ -15,6 +16,12 @@ const getBlackboxApiKey = () => {
   return apiKey;
 };
 
+export interface IngredientRecommendation {
+  original: string;
+  suggested: string;
+  scoreImprovement: number;
+}
+
 export interface AnalyzeResponse {
   dishName: string;
   ingredients: DetectedIngredient[];
@@ -23,6 +30,7 @@ export interface AnalyzeResponse {
     health: number;
     carbon: number;
   };
+  recommendations?: IngredientRecommendation[];
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { base64Image } = body;
+    const { base64Image, user_id, liked_dishes } = body;
 
     if (!base64Image) {
       return NextResponse.json(
@@ -97,21 +105,24 @@ export async function POST(request: NextRequest) {
             "confidence": 0.85,
             "category": "plant" | "plant_protein" | "animal"
           }
-        ]
+        ],
+        "scores": {
+          "vegetal": 45,
+          "health": 70,
+          "carbon": 60
+        }
       }
       
       Examples:
-      - {"dishName": "chicken curry", "ingredients": [{"name": "chicken", "confidence": 0.9, "category": "animal"}, {"name": "rice", "confidence": 0.8, "category": "plant"}, {"name": "curry sauce", "confidence": 0.7, "category": "plant"}]}
-      - {"dishName": "burger", "ingredients": [{"name": "beef", "confidence": 0.95, "category": "animal"}, {"name": "bread", "confidence": 0.9, "category": "plant"}, {"name": "cheese", "confidence": 0.85, "category": "animal"}, {"name": "lettuce", "confidence": 0.7, "category": "plant"}]}
+      - {"dishName": "chicken curry", "ingredients": [{"name": "chicken", "confidence": 0.9, "category": "animal"}, {"name": "rice", "confidence": 0.8, "category": "plant"}, {"name": "curry sauce", "confidence": 0.7, "category": "plant"}], "scores": {"vegetal": 40, "health": 65, "carbon": 50}}
+      - {"dishName": "burger", "ingredients": [{"name": "beef", "confidence": 0.95, "category": "animal"}, {"name": "bread", "confidence": 0.9, "category": "plant"}, {"name": "cheese", "confidence": 0.85, "category": "animal"}, {"name": "lettuce", "confidence": 0.7, "category": "plant"}], "scores": {"vegetal": 30, "health": 45, "carbon": 30}}
     `;
 
-    // Try multiple models in order until one works
+    // Try multiple models in order until one works - Gemini 3 Pro Preview first
     const modelsToTry = [
       "blackboxai/google/gemini-3-pro-preview",
-      "blackboxai/gemini-pro-vision",
-      "blackboxai/gemini-1.5-pro",
-      "blackboxai/gpt-4o",
-      "gpt-4o",
+      // Removed invalid models: blackboxai/gemini-pro-vision, blackboxai/gemini-1.5-pro, blackboxai/gpt-4o
+      // These models are not available with the current API key
     ];
 
     let lastError: any = null;
@@ -138,10 +149,10 @@ export async function POST(request: NextRequest) {
               ]
             }
           ],
-          max_tokens: 4000, // Increased to handle full ingredient lists and complex dishes
+          max_tokens: 4000, // Increased to prevent truncation
           temperature: 0.1,
           stream: false,
-          response_format: { type: "json_object" } // Enforce JSON output
+          response_format: { type: "json_object" } // Enforce JSON object output
         };
 
         console.log(`Trying model: ${model}`);
@@ -172,10 +183,9 @@ export async function POST(request: NextRequest) {
           // Check if the response was truncated by checking finish_reason
           const finishReason = data.choices?.[0]?.finish_reason;
           if (finishReason === 'length') {
-            console.warn(`Model ${model} response was truncated (finish_reason: length)`);
-            // Try next model if this one was truncated
-            lastError = { status: response.status, message: "Response truncated (token limit)" };
-            continue;
+            console.warn(`Model ${model} response was truncated (finish_reason: length). Attempting to extract JSON anyway.`);
+            // Continue anyway - we'll try to extract JSON from what we have
+            // The JSON might still be valid even if truncated
           }
         } catch (parseError) {
           console.error("Failed to parse response as JSON:", parseError);
@@ -204,15 +214,32 @@ export async function POST(request: NextRequest) {
     // Parse OpenAI-style response
     let rawContent = data.choices?.[0]?.message?.content;
     
-    // Check reasoning_content (Gemini 3 Pro)
-    if (!rawContent || rawContent.trim().length === 0) {
+    // Check reasoning_content (Gemini 3 Pro) - extract JSON if content is empty or contains reasoning
+    if (!rawContent || rawContent.trim().length === 0 || rawContent.trim().startsWith('**')) {
       const reasoningContent = data.choices?.[0]?.message?.reasoning_content;
       if (reasoningContent) {
-        const jsonMatch = reasoningContent.match(/\{[\s\S]*"dishName"[\s\S]*\}/);
-        if (jsonMatch) {
-          rawContent = jsonMatch[0];
-        } else {
-          rawContent = reasoningContent;
+        // Try to find JSON object in reasoning content
+        const firstBrace = reasoningContent.indexOf('{');
+        if (firstBrace !== -1) {
+          let braceCount = 0;
+          let lastBrace = -1;
+          for (let i = firstBrace; i < reasoningContent.length; i++) {
+            if (reasoningContent[i] === '{') braceCount++;
+            else if (reasoningContent[i] === '}') {
+              braceCount--;
+              if (braceCount === 0) { lastBrace = i; break; }
+            }
+          }
+          if (lastBrace !== -1) {
+            rawContent = reasoningContent.substring(firstBrace, lastBrace + 1);
+            console.log(`Extracted JSON from reasoning_content`);
+          } else {
+            // Fallback: try regex match
+            const jsonMatch = reasoningContent.match(/\{[\s\S]*"dishName"[\s\S]*\}/);
+            if (jsonMatch) {
+              rawContent = jsonMatch[0];
+            }
+          }
         }
       }
     }
@@ -350,18 +377,304 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Return main analysis immediately, generate recommendations in background
     const response: AnalyzeResponse = {
       dishName: parsedResult.dishName.trim(),
       ingredients: normalizedIngredients,
-      scores
+      scores,
+      recommendations: undefined // Will be loaded separately
     };
 
-    return NextResponse.json(response);
+    // Generate recommendations in background (don't await)
+    if (user_id) {
+      // Fire and forget - generate recommendations asynchronously
+      generateRecommendationsInBackground(
+        parsedResult.dishName,
+        normalizedIngredients,
+        scores,
+        user_id,
+        liked_dishes
+      ).catch(err => {
+        console.error("Background recommendation generation failed:", err);
+      });
+    }
 
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error("API Route Error:", error);
     return NextResponse.json(
       { error: `Failed to analyze image: ${error.message || "Unknown error"}` },
+      { status: 500 }
+    );
+  }
+}
+
+// Helper function to generate recommendations in background
+async function generateRecommendationsInBackground(
+  dishName: string,
+  ingredients: any[],
+  scores: any,
+  userId: string,
+  likedDishes: any
+) {
+  try {
+    // Fetch user preferences
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('dietary_preference, weight_kg, activity_level')
+      .eq('id', userId)
+      .single();
+
+    if (!userError && user) {
+      // Get liked dishes names (if available) - map dish IDs to dish names
+      const likedDishesIds = Array.isArray(likedDishes) ? likedDishes : [];
+      // Map dish IDs to names (we'll use the IDs as context, actual names would come from database)
+      const likedDishesContext = likedDishesIds.length > 0 
+        ? `User liked ${likedDishesIds.length} dish(es) during onboarding - consider similar flavor profiles and cooking styles`
+        : '';
+          
+          // Generate recommendations using AI - simplified prompt
+          const recommendationPrompt = `Return only the JSON object.
+
+Suggest 1-3 ingredient substitutions to improve sustainability scores.
+
+Dish: ${dishName}
+Ingredients: ${ingredients.map(i => i.name).join(', ')}
+Scores: vegetal=${scores.vegetal}, health=${scores.health}, carbon=${scores.carbon}
+Diet: ${user.dietary_preference || 50}/100 (0=vegan, 100=carnivore)
+
+CRITICAL CONSTRAINTS:
+- Return ONLY a STRICT JSON object (no markdown, no backticks, no extra text)
+- Only suggest for existing ingredients: ${ingredients.map(i => i.name).join(', ')}
+- Respect dietary preference
+- scoreImprovement: estimated score improvement (5-50 points, weighted: vegetal 50%, health 25%, carbon 25%)
+
+JSON Structure:
+{
+  "recommendations": [
+    {
+      "original": "ingredient name",
+      "suggested": "alternative name",
+      "scoreImprovement": number
+    }
+  ]
+}
+
+Examples:
+- {"recommendations": [{"original": "ground beef", "suggested": "lentils", "scoreImprovement": 22}]}
+- {"recommendations": [{"original": "white rice", "suggested": "brown rice", "scoreImprovement": 12}, {"original": "butter", "suggested": "olive oil", "scoreImprovement": 15}]}
+- {"recommendations": []}`;
+
+      // Try Gemini 3 Pro Preview first, then fallback to other models
+      const recModelsToTry = [
+        "blackboxai/google/gemini-3-pro-preview",
+        // Removed invalid models: blackboxai/gemini-1.5-pro, blackboxai/gemini-pro-vision, blackboxai/gpt-4o
+        // These models are not available with the current API key
+      ];
+
+      const apiKey = getBlackboxApiKey();
+      let recData: any = null;
+      let recContent: string | null = null;
+      let recommendations: IngredientRecommendation[] = [];
+
+          for (const recModel of recModelsToTry) {
+            try {
+              console.log(`Trying recommendation model: ${recModel}`);
+              const recPayload = {
+                model: recModel,
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: recommendationPrompt
+                      }
+                    ]
+                  }
+                ],
+                max_tokens: 2000, // Reduced for faster response
+                temperature: 0.1,
+                stream: false,
+                response_format: { type: "json_object" } // Enforce JSON object output
+              };
+
+              const fetchStartTime = Date.now();
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+              
+              const recResponse = await fetch(BLACKBOX_API_URL, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(recPayload),
+                signal: controller.signal
+              }).catch((fetchError: any) => {
+                clearTimeout(timeoutId);
+                if (fetchError.name === 'AbortError') {
+                  console.warn(`Recommendation fetch timed out after ${Date.now() - fetchStartTime}ms`);
+                }
+                throw fetchError;
+              });
+              
+              clearTimeout(timeoutId);
+              console.log(`Recommendation API response status: ${recResponse.status} (took ${Date.now() - fetchStartTime}ms)`);
+
+              if (recResponse.ok) {
+                recData = await recResponse.json();
+                console.log(`Recommendation API response structure:`, Object.keys(recData));
+                console.log(`Recommendation choices length: ${recData.choices?.length || 0}`);
+                if (recData.choices && recData.choices.length > 0) {
+                  console.log(`First choice structure:`, Object.keys(recData.choices[0]));
+                  console.log(`First choice message structure:`, recData.choices[0].message ? Object.keys(recData.choices[0].message) : 'no message');
+                }
+                const choice = recData.choices?.[0];
+                const finishReason = choice?.finish_reason;
+                
+                // Check for content in multiple possible locations
+                recContent = choice?.message?.content;
+                
+                // If content is empty or looks like reasoning, try to extract JSON from reasoning_content
+                if ((!recContent || recContent.trim().startsWith('**')) && choice?.message?.reasoning_content) {
+                  // Try to find JSON array in reasoning_content
+                  const reasoningText = choice.message.reasoning_content;
+                  const jsonStart = reasoningText.indexOf('[');
+                  if (jsonStart !== -1) {
+                    // Extract JSON array from reasoning content
+                    let bracketCount = 0;
+                    let jsonEnd = -1;
+                    for (let i = jsonStart; i < reasoningText.length; i++) {
+                      if (reasoningText[i] === '[') bracketCount++;
+                      else if (reasoningText[i] === ']') {
+                        bracketCount--;
+                        if (bracketCount === 0) { jsonEnd = i; break; }
+                      }
+                    }
+                    if (jsonEnd !== -1) {
+                      recContent = reasoningText.substring(jsonStart, jsonEnd + 1);
+                      console.log(`Extracted JSON from reasoning_content`);
+                    }
+                  }
+                }
+                
+                // If still no content, use reasoning_content as fallback
+                if (!recContent && choice?.message?.reasoning_content) {
+                  recContent = choice.message.reasoning_content;
+                  console.log(`Using reasoning_content as content`);
+                }
+                
+                console.log(`Recommendation finish_reason: ${finishReason}`);
+                console.log(`Recommendation content length: ${recContent?.length || 0}`);
+                console.log(`Recommendation content preview: ${recContent?.substring(0, 200) || 'empty'}`);
+                
+                if (finishReason === 'length') {
+                  console.warn(`Recommendation response was truncated (finish_reason: length). Content may be incomplete.`);
+                }
+                
+                if (recContent) {
+                  console.log(`Success with recommendation model: ${recModel}`);
+                  break; // Success, exit loop
+                } else {
+                  console.warn(`Recommendation model ${recModel} returned OK but no content in response`);
+                  console.warn(`Full response:`, JSON.stringify(recData, null, 2).substring(0, 500));
+                }
+              } else {
+                const errorText = await recResponse.text().catch(() => 'Unknown error');
+                console.warn(`Recommendation model ${recModel} failed: ${recResponse.status} - ${errorText.substring(0, 200)}`);
+              }
+            } catch (recError: any) {
+              console.warn(`Error with recommendation model ${recModel}:`, recError?.message || recError);
+              continue; // Try next model
+            }
+          }
+
+      // Parse recommendations from response
+      if (recContent) {
+        try {
+          // Clean and parse JSON object
+          let cleanedRec = recContent.replace(/```json/g, '').replace(/```/g, '').trim();
+          
+          // Find JSON object
+          const firstBrace = cleanedRec.indexOf('{');
+          if (firstBrace !== -1) {
+            cleanedRec = cleanedRec.substring(firstBrace);
+            let braceCount = 0;
+            let lastBrace = -1;
+            for (let i = 0; i < cleanedRec.length; i++) {
+              if (cleanedRec[i] === '{') braceCount++;
+              else if (cleanedRec[i] === '}') {
+                braceCount--;
+                if (braceCount === 0) { lastBrace = i; break; }
+              }
+            }
+            if (lastBrace !== -1) {
+              cleanedRec = cleanedRec.substring(0, lastBrace + 1);
+              const recJson = JSON.parse(cleanedRec);
+              if (recJson.recommendations && Array.isArray(recJson.recommendations)) {
+                recommendations = recJson.recommendations;
+              } else if (Array.isArray(recJson)) {
+                // Fallback: if it's just an array, use it directly
+                recommendations = recJson;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to parse recommendations:", e);
+        }
+      }
+      
+      // Store recommendations in a simple in-memory cache (keyed by userId + dishName)
+      // In production, you might want to use Redis or database
+      const cacheKey = `${userId}_${dishName}`;
+      if (recommendations.length > 0) {
+        // Store in global cache (simple Map)
+        if (!(global as any).recommendationCache) {
+          (global as any).recommendationCache = new Map();
+        }
+        (global as any).recommendationCache.set(cacheKey, recommendations);
+        console.log(`Stored recommendations in cache for key: ${cacheKey}`);
+      }
+    }
+  } catch (recError) {
+    console.warn("Error generating recommendations:", recError);
+  }
+}
+
+// GET endpoint to fetch recommendations
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get('user_id');
+    const dishName = searchParams.get('dish_name');
+
+    if (!userId || !dishName) {
+      return NextResponse.json(
+        { error: 'Missing user_id or dish_name parameter' },
+        { status: 400 }
+      );
+    }
+
+    const cacheKey = `${userId}_${dishName}`;
+    if (!(global as any).recommendationCache) {
+      (global as any).recommendationCache = new Map();
+    }
+
+    const recommendations = (global as any).recommendationCache.get(cacheKey);
+    
+    if (recommendations) {
+      return NextResponse.json({ recommendations });
+    } else {
+      return NextResponse.json(
+        { recommendations: null, message: 'Recommendations not ready yet' },
+        { status: 202 } // Accepted but not ready
+      );
+    }
+  } catch (error: any) {
+    console.error("Error fetching recommendations:", error);
+    return NextResponse.json(
+      { error: `Failed to fetch recommendations: ${error.message || "Unknown error"}` },
       { status: 500 }
     );
   }

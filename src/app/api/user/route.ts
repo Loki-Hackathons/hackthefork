@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try to select name and avatar fields, but handle gracefully if columns don't exist
+    // Try to select name, avatar, and preferences fields, but handle gracefully if columns don't exist
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, created_at, avatar_image_url, avatar')
+      .select('id, name, created_at, avatar_image_url, avatar, dietary_preference, weight_kg, activity_level')
       .eq('id', userId)
       .single();
 
@@ -74,6 +74,9 @@ export async function PATCH(request: NextRequest) {
     const avatar = formData.get('avatar') as string | null;
     const avatar_image = formData.get('avatar_image') as File | null;
     const avatar_image_base64 = formData.get('avatar_image_base64') as string | null;
+    const dietary_preference = formData.get('dietary_preference') ? parseInt(formData.get('dietary_preference') as string) : null;
+    const weight_kg = formData.get('weight_kg') ? parseFloat(formData.get('weight_kg') as string) : null;
+    const activity_level = formData.get('activity_level') ? parseInt(formData.get('activity_level') as string) : null;
 
     if (!user_id) {
       return NextResponse.json(
@@ -162,6 +165,9 @@ export async function PATCH(request: NextRequest) {
       // If setting emoji avatar, clear image URL
       updateData.avatar_image_url = null;
     }
+    if (dietary_preference !== null) updateData.dietary_preference = dietary_preference;
+    if (weight_kg !== null) updateData.weight_kg = weight_kg;
+    if (activity_level !== null) updateData.activity_level = activity_level;
 
     // Update user (handle gracefully if columns don't exist)
     const { data: user, error } = await supabase
