@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { DetectedIngredient } from '@/lib/image-analysis';
+import { supabase } from '@/lib/supabase';
 
 const BLACKBOX_API_URL = "https://api.blackbox.ai/chat/completions";
 
@@ -15,6 +16,12 @@ const getBlackboxApiKey = () => {
   return apiKey;
 };
 
+export interface IngredientRecommendation {
+  original: string;
+  suggested: string;
+  scoreImprovement: number;
+}
+
 export interface AnalyzeResponse {
   dishName: string;
   ingredients: DetectedIngredient[];
@@ -23,6 +30,7 @@ export interface AnalyzeResponse {
     health: number;
     carbon: number;
   };
+  recommendations?: IngredientRecommendation[];
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { base64Image } = body;
+    const { base64Image, user_id, liked_dishes } = body;
 
     if (!base64Image) {
       return NextResponse.json(
@@ -105,13 +113,12 @@ export async function POST(request: NextRequest) {
       - {"dishName": "burger", "ingredients": [{"name": "beef", "confidence": 0.95, "category": "animal"}, {"name": "bread", "confidence": 0.9, "category": "plant"}, {"name": "cheese", "confidence": 0.85, "category": "animal"}, {"name": "lettuce", "confidence": 0.7, "category": "plant"}]}
     `;
 
-    // Try multiple models in order until one works
+    // Try multiple models in order until one works - Gemini 3 Pro Preview first
     const modelsToTry = [
       "blackboxai/google/gemini-3-pro-preview",
+      "blackboxai/gpt-4o",
       "blackboxai/gemini-pro-vision",
       "blackboxai/gemini-1.5-pro",
-      "blackboxai/gpt-4o",
-      "gpt-4o",
     ];
 
     let lastError: any = null;
@@ -350,10 +357,216 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Generate personalized recommendations if user_id is provided
+    let recommendations: IngredientRecommendation[] = [];
+    if (user_id) {
+      try {
+        // Fetch user preferences
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .select('dietary_preference, weight_kg, activity_level')
+          .eq('id', user_id)
+          .single();
+
+        if (!userError && user) {
+          // Get liked dishes names (if available) - map dish IDs to dish names
+          const likedDishesIds = Array.isArray(liked_dishes) ? liked_dishes : [];
+          // Map dish IDs to names (we'll use the IDs as context, actual names would come from database)
+          const likedDishesContext = likedDishesIds.length > 0 
+            ? `User liked ${likedDishesIds.length} dish(es) during onboarding - consider similar flavor profiles and cooking styles`
+            : '';
+          
+          // Generate recommendations using AI with comprehensive context
+          const recommendationPrompt = `
+            Return only the JSON object.
+
+            You are an expert nutritionist and sustainability advisor. Analyze this dish and suggest ingredient substitutions that will improve sustainability scores while respecting the user's preferences, dietary goals, and taste preferences.
+
+            CURRENT DISH ANALYSIS:
+            - Dish Name: ${parsedResult.dishName}
+            - Current Ingredients: ${normalizedIngredients.map(i => `${i.name} (${i.category}, confidence: ${i.confidence.toFixed(2)})`).join(', ')}
+            - Current Scores:
+              * Vegetal: ${scores.vegetal}/100 (plant-based score)
+              * Health: ${scores.health}/100 (nutritional quality)
+              * Carbon: ${scores.carbon}/100 (environmental impact, higher = better)
+            - Current Aggregated Score: ${Math.round(scores.vegetal * 0.5 + scores.health * 0.25 + scores.carbon * 0.25)}/100
+            
+            USER PROFILE:
+            - Dietary Preference: ${user.dietary_preference || 50}/100 
+              * 0-20 = Vegan (strictly plant-based)
+              * 21-40 = Vegetarian (no meat, but may include dairy/eggs)
+              * 41-60 = Flexitarian (mostly plant-based, occasional meat)
+              * 61-80 = Omnivore (balanced plant and animal foods)
+              * 81-100 = Carnivore (meat-heavy diet)
+            - Weight: ${user.weight_kg || 'unknown'} kg
+            - Activity Level: ${user.activity_level || 2}/4
+              * 0 = Sedentary (little to no exercise)
+              * 1 = Light (1-3 days/week)
+              * 2 = Moderate (3-5 days/week)
+              * 3 = Active (6-7 days/week)
+              * 4 = Very Active (2x per day or intense training)
+            ${likedDishesContext ? `- ${likedDishesContext}` : ''}
+            
+            TASK:
+            Suggest 1-4 ingredient substitutions that will:
+            1. IMPROVE SCORES: Calculate the expected improvement in vegetal, health, and carbon scores
+            2. RESPECT DIETARY PREFERENCE: 
+               - If vegan (0-20): Only suggest plant-based alternatives
+               - If vegetarian (21-40): Suggest plant-based or dairy/egg alternatives
+               - If flexitarian (41-60): Prefer plant-based but allow lean animal proteins
+               - If omnivore (61-80): Balance plant and animal, prefer sustainable animal options
+               - If carnivore (81-100): Suggest leaner, more sustainable animal proteins
+            3. MATCH TASTE PREFERENCES: Consider the user's liked dishes to suggest similar flavors/textures
+            4. CONSIDER NUTRITIONAL NEEDS: Based on weight and activity level, ensure adequate protein/calories
+            5. MAINTAIN DISH CHARACTER: Substitutions should preserve the dish's essence
+            
+            SCORE IMPROVEMENT CALCULATION:
+            For each substitution, estimate the improvement in the aggregated score (weighted: vegetal 50%, health 25%, carbon 25%).
+            Consider:
+            - Vegetal improvement: How much more plant-based does this make the dish? (0-30 points possible)
+            - Health improvement: Nutritional quality increase? (0-20 points possible)
+            - Carbon improvement: Environmental impact reduction? (0-20 points possible)
+            - Total scoreImprovement should be the weighted sum: (vegetal_improvement * 0.5) + (health_improvement * 0.25) + (carbon_improvement * 0.25)
+            - Range: 5-50 points per substitution (be realistic, most improvements are 10-25 points)
+            
+            CRITICAL: Return ONLY a valid JSON array. No markdown, no backticks, no explanations, no other text.
+            
+            The response must be a JSON array with this exact structure:
+            [
+              {
+                "original": "exact ingredient name to replace",
+                "suggested": "specific alternative ingredient name",
+                "scoreImprovement": number
+              }
+            ]
+            
+            Rules:
+            - Return ONLY the array, nothing before or after
+            - Only suggest substitutions for ingredients that exist in: ${normalizedIngredients.map(i => i.name).join(', ')}
+            - Be specific with names (e.g., "ground beef" not "meat")
+            - Prioritize substitutions matching dietary preference: ${user.dietary_preference || 50}/100
+            - scoreImprovement: estimated aggregated score improvement (5-50 points)
+            - If dish scores well (>80) or matches preferences, suggest 1-2 minor improvements
+            - If no improvements exist, return: []
+          `;
+
+          // Try Gemini 3 Pro Preview first, then fallback to other models
+          const recModelsToTry = [
+            "blackboxai/google/gemini-3-pro-preview",
+            "blackboxai/gpt-4o",
+            "blackboxai/gemini-pro-vision",
+          ];
+
+          let recData: any = null;
+          let recContent: string | null = null;
+
+          for (const recModel of recModelsToTry) {
+            try {
+              const recPayload = {
+                model: recModel,
+                messages: [
+                  {
+                    role: "user",
+                    content: recommendationPrompt
+                  }
+                ],
+                max_tokens: 2000,
+                temperature: 0.2,
+                stream: false
+                // Note: Not using json_object mode since we want a JSON array, not an object
+              };
+
+              const recResponse = await fetch(BLACKBOX_API_URL, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(recPayload)
+              });
+
+              if (recResponse.ok) {
+                recData = await recResponse.json();
+                recContent = recData.choices?.[0]?.message?.content;
+                if (recContent) {
+                  break; // Success, exit loop
+                }
+              } else {
+                console.warn(`Recommendation model ${recModel} failed: ${recResponse.status}`);
+              }
+            } catch (recError) {
+              console.warn(`Error with recommendation model ${recModel}:`, recError);
+              continue; // Try next model
+            }
+          }
+
+          // Parse recommendations from response
+          if (recContent) {
+            try {
+              // Clean and parse JSON - look for array first, then object
+              let cleanedRec = recContent.replace(/```json/g, '').replace(/```/g, '').trim();
+              
+              // Try to find JSON array first
+              const firstBracket = cleanedRec.indexOf('[');
+              if (firstBracket !== -1) {
+                cleanedRec = cleanedRec.substring(firstBracket);
+                let bracketCount = 0;
+                let lastBracket = -1;
+                for (let i = 0; i < cleanedRec.length; i++) {
+                  if (cleanedRec[i] === '[') bracketCount++;
+                  else if (cleanedRec[i] === ']') {
+                    bracketCount--;
+                    if (bracketCount === 0) { lastBracket = i; break; }
+                  }
+                }
+                if (lastBracket !== -1) {
+                  cleanedRec = cleanedRec.substring(0, lastBracket + 1);
+                  const recJson = JSON.parse(cleanedRec);
+                  if (Array.isArray(recJson)) {
+                    recommendations = recJson;
+                  }
+                }
+              } else {
+                // Fallback: try to find JSON object with recommendations array
+                const firstBrace = cleanedRec.indexOf('{');
+                if (firstBrace !== -1) {
+                  cleanedRec = cleanedRec.substring(firstBrace);
+                  let braceCount = 0;
+                  let lastBrace = -1;
+                  for (let i = 0; i < cleanedRec.length; i++) {
+                    if (cleanedRec[i] === '{') braceCount++;
+                    else if (cleanedRec[i] === '}') {
+                      braceCount--;
+                      if (braceCount === 0) { lastBrace = i; break; }
+                    }
+                  }
+                  if (lastBrace !== -1) {
+                    cleanedRec = cleanedRec.substring(0, lastBrace + 1);
+                    const recJson = JSON.parse(cleanedRec);
+                    if (Array.isArray(recJson)) {
+                      recommendations = recJson;
+                    } else if (recJson.recommendations && Array.isArray(recJson.recommendations)) {
+                      recommendations = recJson.recommendations;
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to parse recommendations:", e);
+            }
+          }
+        }
+      } catch (recError) {
+        console.warn("Error generating recommendations:", recError);
+        // Continue without recommendations
+      }
+    }
+
     const response: AnalyzeResponse = {
       dishName: parsedResult.dishName.trim(),
       ingredients: normalizedIngredients,
-      scores
+      scores,
+      recommendations: recommendations.length > 0 ? recommendations : undefined
     };
 
     return NextResponse.json(response);

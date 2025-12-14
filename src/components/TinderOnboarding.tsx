@@ -6,7 +6,7 @@ import { Heart, X, Camera, Sparkles, Image as ImageIcon, ArrowRight } from 'luci
 import { ingredientImagePaths } from '@/utils/foodIcons';
 import { analyzeImageWithBlackbox } from '@/services/blackboxVision';
 import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
-import { setOnboardingComplete, setUserName } from '@/lib/cookies';
+import { setOnboardingComplete, setUserName, setLikedDishes } from '@/lib/cookies';
 
 interface TinderOnboardingProps {
   onComplete: () => void;
@@ -87,6 +87,8 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const handleNameSubmit = () => {
     if (userName.trim()) {
       setUserName(userName.trim());
+      // Save liked dishes before completing
+      setLikedDishes(liked.map(id => String(id)));
       setOnboardingComplete(true);
       onComplete();
     }
