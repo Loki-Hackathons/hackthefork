@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS posts (
   vegetal_score INTEGER NOT NULL CHECK (vegetal_score >= 0 AND vegetal_score <= 100),
   health_score INTEGER NOT NULL CHECK (health_score >= 0 AND health_score <= 100),
   carbon_score INTEGER NOT NULL CHECK (carbon_score >= 0 AND carbon_score <= 100),
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

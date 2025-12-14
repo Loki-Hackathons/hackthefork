@@ -92,7 +92,28 @@ export async function POST(request: NextRequest) {
     const imageFile = formData.get('image') as File;
     const userId = formData.get('user_id') as string;
     const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null;
-    const comment = formData.get('comment') as string | null;
+    const commentRaw = formData.get('comment') as string | null;
+    
+    // Validate rating if provided
+    if (rating !== null && (rating < 1 || rating > 5)) {
+      return NextResponse.json(
+        { error: 'Rating must be between 1 and 5' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate and trim comment if provided
+    let comment: string | null = null;
+    if (commentRaw) {
+      const trimmedComment = commentRaw.trim();
+      if (trimmedComment.length > 200) {
+        return NextResponse.json(
+          { error: 'Comment must be 200 characters or less' },
+          { status: 400 }
+        );
+      }
+      comment = trimmedComment.length > 0 ? trimmedComment : null;
+    }
 
     if (!imageFile || !userId) {
       return NextResponse.json(
