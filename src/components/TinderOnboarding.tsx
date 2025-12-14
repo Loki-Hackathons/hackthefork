@@ -2,10 +2,11 @@
 
 import { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'motion/react';
-import { Heart, X, Camera, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Heart, X, Camera, Sparkles, Image as ImageIcon, ArrowRight } from 'lucide-react';
 import { ingredientImagePaths } from '@/utils/foodIcons';
 import { analyzeImageWithBlackbox } from '@/services/blackboxVision';
 import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
+import { setOnboardingComplete, setUserName } from '@/lib/cookies';
 
 interface TinderOnboardingProps {
   onComplete: () => void;
@@ -49,7 +50,7 @@ const dishes = [
 
 export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboardingProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [liked, setLiked] = useState<number[]>([]);
+  const [liked, setLiked] = useState<(string | number)[]>([]);
   const [showParticles, setShowParticles] = useState(false);
   const [particleKey, setParticleKey] = useState(0); // Key to force re-render of particles
   // We track the exit direction: 1 for right, -1 for left
@@ -61,6 +62,10 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // Name collection state
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [userName, setUserNameInput] = useState('');
 
   const currentDish = scannedDish ? {
     id: 'scanned',
@@ -77,11 +82,20 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
       setCurrentIndex(prev => prev + 1);
     } else {
       if (!isRevisit) {
-        onComplete();
+        // Show name input before completing
+        setShowNameInput(true);
       } else {
         setCurrentIndex(0);
         setLiked([]);
       }
+    }
+  };
+  
+  const handleNameSubmit = () => {
+    if (userName.trim()) {
+      setUserName(userName.trim());
+      setOnboardingComplete(true);
+      onComplete();
     }
   };
 
@@ -92,7 +106,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
     
     // Logic for "Like"
     if (direction === 'right') {
-      setLiked([...liked, currentDish.id]);
+      setLiked([...liked, currentDish.id as string | number]);
       // Force new particle animation by resetting and incrementing key
       setShowParticles(false); // Reset first
       setParticleKey(prev => prev + 1); // Force re-render with new key
@@ -156,6 +170,58 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
     fileInputRef.current?.click();
     setScanMode(true);
   };
+
+  // Show name input screen if needed
+  if (showNameInput && !isRevisit) {
+    return (
+      <motion.div
+        className="h-full w-full bg-black flex flex-col items-center justify-center px-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <motion.div
+          className="w-full max-w-md"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h2 className="text-white text-3xl font-bold mb-2 text-center">
+            Bienvenue ! 👋
+          </h2>
+          <p className="text-white/70 text-center mb-8 text-lg">
+            Comment veux-tu qu'on t'appelle ?
+          </p>
+          
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={userName}
+              onChange={(e) => setUserNameInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && userName.trim()) {
+                  handleNameSubmit();
+                }
+              }}
+              placeholder="Ton prénom"
+              className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-2xl text-white text-lg placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors"
+              autoFocus
+            />
+            
+            <motion.button
+              onClick={handleNameSubmit}
+              disabled={!userName.trim()}
+              className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              whileTap={{ scale: 0.95 }}
+              whileHover={userName.trim() ? { scale: 1.02 } : {}}
+            >
+              <span>Continuer</span>
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   if (!currentDish) {
     return null;

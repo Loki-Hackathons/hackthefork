@@ -56,9 +56,20 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching ingredients:', ingredientsError);
         }
 
+        // Get comment count for this post
+        const { count: commentCount, error: commentCountError } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id);
+
+        if (commentCountError) {
+          console.error('Error counting comments:', commentCountError);
+        }
+
         return {
           ...post,
           upvote_count: count || 0,
+          comment_count: commentCount || 0,
           ingredients: ingredients || []
         };
       })
@@ -155,7 +166,7 @@ export async function POST(request: NextRequest) {
     console.log('Uploaded file path:', uploadedPath);
     console.log('Generated public URL:', publicUrl);
 
-    // Ensure user exists
+    // Ensure user exists (name will be updated separately via settings API)
     const { error: userError } = await supabase
       .from('users')
       .upsert({ id: userId, created_at: new Date().toISOString() }, { onConflict: 'id' });

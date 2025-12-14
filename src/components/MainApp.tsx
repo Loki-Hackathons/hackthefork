@@ -8,6 +8,7 @@ import { CameraScreen } from './CameraScreen';
 import { ShopScreen } from './ShopScreen';
 import { ProfileScreen } from './ProfileScreen';
 import { ChallengesScreen } from './ChallengesScreen';
+import { MessagesScreen } from './MessagesScreen';
 import { getUserId } from '@/lib/cookies';
 
 interface MainAppProps {
@@ -15,7 +16,7 @@ interface MainAppProps {
   setOnboardingComplete: (value: boolean) => void;
 }
 
-export type Screen = 'feed' | 'swipe' | 'camera' | 'shop' | 'profile' | 'challenges';
+export type Screen = 'feed' | 'swipe' | 'camera' | 'shop' | 'profile' | 'challenges' | 'messages';
 
 export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppProps) {
   const [currentScreen, setCurrentScreen] = useState<Screen>('feed');
@@ -41,8 +42,9 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
         {currentScreen === 'swipe' && <TinderOnboarding isRevisit={true} onComplete={() => {}} />}
         {currentScreen === 'camera' && <CameraScreen onNavigate={setCurrentScreen} />}
         {currentScreen === 'shop' && <ShopScreen onNavigate={setCurrentScreen} />}
-        {currentScreen === 'profile' && <ProfileScreen />}
+        {currentScreen === 'profile' && <ProfileScreen onNavigate={setCurrentScreen} />}
         {currentScreen === 'challenges' && <ChallengesScreen />}
+        {currentScreen === 'messages' && <MessagesScreen onNavigate={setCurrentScreen} />}
       </div>
 
       {/* Bottom Navigation */}

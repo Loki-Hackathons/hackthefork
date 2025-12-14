@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
               ]
             }
           ],
-          max_tokens: 200, // Increased to allow reasoning + response (Gemini 3 Pro needs reasoning tokens)
+          max_tokens: 500, // Increased to allow reasoning + response (Gemini 3 Pro needs reasoning tokens)
           temperature: 0.1,
           stream: false
         };
@@ -114,9 +114,20 @@ export async function POST(request: NextRequest) {
           continue; // Try next model
         }
 
-        data = await response.json();
+        const responseText = await response.text();
         console.log(`Success with model: ${model}`);
-        console.log("Blackbox API Response:", JSON.stringify(data, null, 2));
+        console.log("Blackbox API Raw Response:", responseText.substring(0, 500)); // Log first 500 chars
+        
+        try {
+          data = JSON.parse(responseText);
+          console.log("Blackbox API Parsed Response:", JSON.stringify(data, null, 2));
+        } catch (parseError) {
+          console.error("Failed to parse response as JSON:", parseError);
+          console.error("Raw response:", responseText);
+          lastError = { status: response.status, message: "Invalid JSON response" };
+          continue; // Try next model
+        }
+        
         break; // Success! Exit loop
 
       } catch (error: any) {
@@ -136,27 +147,59 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse OpenAI-style response
-    // Gemini 3 Pro sometimes puts content in reasoning_content, so check both
+    // Check multiple possible response structures
     let rawContent = data.choices?.[0]?.message?.content;
     
-    // Fallback: if content is empty but reasoning_content exists, try to extract from it
+    // Alternative response formats
     if (!rawContent || rawContent.trim().length === 0) {
+      // Check reasoning_content (Gemini 3 Pro)
       const reasoningContent = data.choices?.[0]?.message?.reasoning_content;
       if (reasoningContent) {
-        console.log("Content empty, checking reasoning_content for JSON...");
+        console.log("Content empty, checking reasoning_content...");
         // Try to extract JSON from reasoning content
         const jsonMatch = reasoningContent.match(/\{[\s\S]*"dishName"[\s\S]*\}/);
         if (jsonMatch) {
           rawContent = jsonMatch[0];
           console.log("Extracted JSON from reasoning_content:", rawContent);
+        } else {
+          // If no JSON found, use the reasoning content as-is and try to extract dish name
+          rawContent = reasoningContent;
         }
+      }
+    }
+    
+    // Check other possible fields
+    if (!rawContent || rawContent.trim().length === 0) {
+      rawContent = data.content || data.response || data.text || data.message?.content;
+    }
+    
+    // Check if content is in a different structure
+    if (!rawContent || rawContent.trim().length === 0) {
+      // Try to find content in nested structures
+      if (data.choices && data.choices.length > 0) {
+        const choice = data.choices[0];
+        rawContent = choice.content || choice.text || choice.message?.text || choice.delta?.content;
       }
     }
 
     if (!rawContent || rawContent.trim().length === 0) {
-      console.error("Full API response:", JSON.stringify(data, null, 2));
+      console.error("Full API response structure:", JSON.stringify(data, null, 2));
+      console.error("Available keys in data:", Object.keys(data));
+      if (data.choices && data.choices[0]) {
+        console.error("Available keys in choices[0]:", Object.keys(data.choices[0]));
+        if (data.choices[0].message) {
+          console.error("Available keys in message:", Object.keys(data.choices[0].message));
+        }
+      }
       return NextResponse.json(
-        { error: "No content received from Blackbox API. Response may have been truncated." },
+        { 
+          error: "No content received from Blackbox API. Response may have been truncated or in an unexpected format.",
+          debug: {
+            hasChoices: !!data.choices,
+            choicesLength: data.choices?.length || 0,
+            responseKeys: Object.keys(data)
+          }
+        },
         { status: 500 }
       );
     }

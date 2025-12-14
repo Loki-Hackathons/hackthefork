@@ -3,6 +3,8 @@
 import Cookies from 'js-cookie';
 
 const USER_ID_COOKIE = 'htf_user_id';
+const ONBOARDING_COMPLETE_COOKIE = 'htf_onboarding_complete';
+const USER_NAME_COOKIE = 'htf_user_name';
 const COOKIE_EXPIRY_DAYS = 365;
 
 function generateUserId(): string {
@@ -38,6 +40,34 @@ export function setUserId(userId: string): void {
   if (typeof window === 'undefined') return;
   
   Cookies.set(USER_ID_COOKIE, userId, { 
+    expires: COOKIE_EXPIRY_DAYS,
+    sameSite: 'lax'
+  });
+}
+
+export function isOnboardingComplete(): boolean {
+  if (typeof window === 'undefined') return false;
+  return Cookies.get(ONBOARDING_COMPLETE_COOKIE) === 'true';
+}
+
+export function setOnboardingComplete(complete: boolean): void {
+  if (typeof window === 'undefined') return;
+  
+  Cookies.set(ONBOARDING_COMPLETE_COOKIE, complete ? 'true' : 'false', { 
+    expires: COOKIE_EXPIRY_DAYS,
+    sameSite: 'lax'
+  });
+}
+
+export function getUserName(): string {
+  if (typeof window === 'undefined') return '';
+  return Cookies.get(USER_NAME_COOKIE) || '';
+}
+
+export function setUserName(name: string): void {
+  if (typeof window === 'undefined') return;
+  
+  Cookies.set(USER_NAME_COOKIE, name, { 
     expires: COOKIE_EXPIRY_DAYS,
     sameSite: 'lax'
   });
