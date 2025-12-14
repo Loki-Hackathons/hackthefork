@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Home, Flame, Camera, Trophy, User } from 'lucide-react';
+import { Home, Camera, User } from 'lucide-react';
 import type { Screen } from './MainApp';
 
 interface BottomNavProps {
@@ -12,15 +12,13 @@ interface BottomNavProps {
 export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
   const navItems = [
     { id: 'feed' as Screen, icon: Home, label: 'Feed' },
-    { id: 'swipe' as Screen, icon: Flame, label: 'Discover' },
     { id: 'camera' as Screen, icon: Camera, label: '' },
-    { id: 'challenges' as Screen, icon: Trophy, label: 'Challenges' },
     { id: 'profile' as Screen, icon: User, label: 'Profile' },
   ];
 
   return (
     <div className="bg-black/98 backdrop-blur-xl border-t border-white/10 safe-area-inset-bottom shadow-2xl">
-      <div className="flex items-center justify-around px-2 py-4">
+      <div className="flex items-center justify-evenly px-2 py-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentScreen === item.id;

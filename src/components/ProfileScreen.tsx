@@ -221,6 +221,17 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           <button 
             onClick={() => {
               if (onNavigate) {
+                onNavigate('challenges');
+              }
+            }}
+            className="flex-1 py-2.5 bg-yellow-500 text-black rounded-xl flex items-center justify-center gap-2 font-semibold"
+          >
+            <Trophy className="w-5 h-5" />
+            Challenges
+          </button>
+          <button 
+            onClick={() => {
+              if (onNavigate) {
                 onNavigate('messages');
               }
             }}
@@ -228,9 +239,6 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           >
             <MessageCircle className="w-5 h-5" />
             Messages
-          </button>
-          <button className="flex-1 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl border border-white/20">
-            Share
           </button>
           <button className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
             <Users className="w-5 h-5 text-white" />
