@@ -1,74 +1,86 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingCart, ArrowRight, Leaf, TrendingDown, CheckCircle, AlertCircle, X } from 'lucide-react';
 import type { Screen } from './MainApp';
 
-const mockRecipe = {
-  name: 'homemade curry 🍛',
-  image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob21lbWFkZSUyMGZvb2QlMjBwbGF0ZXxlbnwxfHx8fDE3NjU2NDQwNDh8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  ingredients: [
-    { 
-      id: 1, 
-      name: 'Lentilles corail bio 500g', 
-      price: 3.20, 
-      checked: true,
-      score: 92,
-      sponsored: false
-    },
-    { 
-      id: 2, 
-      name: 'Lait de coco 400ml', 
-      price: 2.80, 
-      checked: true,
-      score: 85,
-      sponsored: false
-    },
-    { 
-      id: 3, 
-      name: 'Épices curry bio 50g', 
-      price: 4.50, 
-      checked: true,
-      score: 90,
-      sponsored: false
-    },
-    { 
-      id: 4, 
-      name: 'Pommes de terre 1kg', 
-      price: 2.20, 
-      checked: true,
-      score: 68,
-      sponsored: false,
-      hasAlternative: true,
-      alternative: {
-        name: 'Patates douces locales 1kg',
-        price: 3.10,
-        score: 94,
-        sponsored: true,
-        brand: 'TerraVita'
-      }
-    },
-    { 
-      id: 5, 
-      name: 'Légumes de saison', 
-      price: 3.90, 
-      checked: true,
-      score: 95,
-      sponsored: false
-    },
-  ]
-};
+interface Ingredient {
+  id: number;
+  name: string;
+  price: number;
+  checked: boolean;
+  score: number;
+  sponsored: boolean;
+  hasAlternative?: boolean;
+  alternative?: {
+    name: string;
+    price: number;
+    score: number;
+    sponsored: boolean;
+    brand: string;
+  };
+}
 
 interface ShopScreenProps {
   onNavigate: (screen: Screen) => void;
+  postId?: string;
+  postImageUrl?: string;
 }
 
-export function ShopScreen({ onNavigate }: ShopScreenProps) {
-  const [ingredients, setIngredients] = useState(mockRecipe.ingredients);
+export function ShopScreen({ onNavigate, postId, postImageUrl }: ShopScreenProps) {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [showSwap, setShowSwap] = useState<number | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderMessage, setOrderMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Charger les ingrédients réels depuis l'API
+  useEffect(() => {
+    if (!postId) {
+      setLoading(false);
+      return;
+    }
+
+    const loadIngredients = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Forcer la ré-analyse pour toujours avoir les bons ingrédients
+        // On pourrait aussi vérifier si fromCache=true et demander à l'utilisateur
+        const response = await fetch(`/api/analyze-ingredients?post_id=${postId}&force=true`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load ingredients');
+        }
+
+        const data = await response.json();
+        
+        console.log('Ingredients loaded:', data.ingredients, 'fromCache:', data.fromCache);
+        
+        // Transformer les ingrédients de la base de données en format UI
+        const transformedIngredients: Ingredient[] = data.ingredients.map((ing: any, index: number) => ({
+          id: index + 1,
+          name: ing.name,
+          price: Math.random() * 5 + 1, // Prix aléatoire pour la démo
+          checked: true,
+          score: Math.floor(Math.random() * 30) + 70, // Score aléatoire 70-100
+          sponsored: false
+        }));
+
+        setIngredients(transformedIngredients);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error loading ingredients:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    loadIngredients();
+  }, [postId]);
 
   const toggleIngredient = (id: number) => {
     setIngredients(ingredients.map(ing => 
@@ -98,7 +110,19 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
     setOrderMessage(null);
     
     try {
-      console.log('🛒 Starting Auchan automation...');
+      // Récupérer uniquement les ingrédients cochés
+      const checkedIngredients = ingredients.filter(ing => ing.checked);
+      
+      if (checkedIngredients.length === 0) {
+        setOrderMessage('❌ Veuillez sélectionner au moins un ingrédient');
+        setOrderLoading(false);
+        return;
+      }
+      
+      // Extraire les noms des ingrédients
+      const ingredientNames = checkedIngredients.map(ing => ing.name);
+      
+      console.log('🛒 Starting Auchan automation with ingredients:', ingredientNames);
       
       const response = await fetch('/api/order', {
         method: 'POST',
@@ -106,14 +130,14 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          dishId: 'burger-vege' // Peut être remplacé par un ID dynamique
+          ingredients: ingredientNames
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setOrderMessage('✅ Automation started! The browser will open...');
+        setOrderMessage(`✅ Automation started! ${ingredientNames.length} ingredient(s) will be added to cart...`);
         console.log('✅ Réponse du serveur:', data);
         
         // Effacer le message après 5 secondes
@@ -133,12 +157,13 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
     .filter(ing => ing.checked)
     .reduce((sum, ing) => sum + ing.price, 0);
 
-  const avgScore = Math.round(
-    ingredients
-      .filter(ing => ing.checked)
-      .reduce((sum, ing) => sum + ing.score, 0) / 
-    ingredients.filter(ing => ing.checked).length
-  );
+      const checkedIngredients = ingredients.filter(ing => ing.checked);
+      const avgScore = checkedIngredients.length > 0
+        ? Math.round(
+            checkedIngredients.reduce((sum, ing) => sum + ing.score, 0) / 
+            checkedIngredients.length
+          )
+        : 0;
 
   const co2Saved = 2.4;
 
@@ -155,17 +180,50 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
           </button>
           <div className="flex-1">
             <h1 className="text-white text-2xl mb-1">
-              {mockRecipe.name}
+              {postId ? 'Ingrédients détectés' : 'Recette'}
             </h1>
             <p className="text-white/50 text-sm">
-              {ingredients.filter(i => i.checked).length} ingredients to order
+              {loading ? 'Analyse en cours...' : `${ingredients.filter(i => i.checked).length} ingrédients à commander`}
             </p>
           </div>
         </div>
+        
+        {/* Image du plat si disponible */}
+        {postImageUrl && (
+          <div className="mb-4 rounded-2xl overflow-hidden">
+            <img 
+              src={postImageUrl} 
+              alt="Plat" 
+              className="w-full h-48 object-cover"
+            />
+          </div>
+        )}
       </div>
 
       {/* Ingredients list */}
       <div className="flex-1 overflow-y-auto px-6 pb-4">
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-white/60">Analyse des ingrédients avec IA...</p>
+            </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-2xl p-6 text-center">
+            <p className="text-red-400 mb-2">Erreur lors du chargement</p>
+            <p className="text-white/60 text-sm">{error}</p>
+          </div>
+        )}
+        
+        {!loading && !error && ingredients.length === 0 && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+            <p className="text-white/60">Aucun ingrédient détecté</p>
+          </div>
+        )}
+        
         <div className="space-y-3">
           {ingredients.map((ingredient) => (
             <div key={ingredient.id}>
