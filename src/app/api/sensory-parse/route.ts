@@ -118,7 +118,7 @@ Now parse this comment:
 "${comment}"
 `;
 
-    // Use Gemini 3 Pro Preview for advanced NLP
+    // Use Claude 3.5 Haiku for fast sensory NLP parsing
     const payload = {
       model: "blackboxai/anthropic/claude-3.5-haiku",
       messages: [
@@ -133,7 +133,7 @@ Now parse this comment:
       response_format: { type: "json_object" }
     };
 
-    console.log(`Parsing sensory comment with Gemini 3 Pro Preview...`);
+    console.log(`Parsing sensory comment with Claude 3.5 Haiku...`);
 
     const response = await fetch(BLACKBOX_API_URL, {
       method: "POST",

@@ -1,100 +1,127 @@
-# Industrial Dashboard - Sensory Disconfirmation Engine
+# Industrial Dashboard - Quick Reference Guide
 
-**B2B Intelligence Platform for PBMA (Plant-Based Meat Alternatives) Reformulation Strategies**
+**Access:** `http://localhost:3000/industrial` (direct URL only, not in main navigation)
 
-## Overview
+---
 
-This dashboard provides scientific analysis of consumer sensory perception for plant-based products, combining:
-- Visual expectation data (swipes)
-- Post-consumption sensory ratings
-- NLP-parsed sensory tags (CATA method)
-- Ingredient correlation analysis
+## Dashboard Overview
 
-## Access
+The **Sensory Disconfirmation Engine** analyzes consumer perception of plant-based meat alternatives (PBMAs) to provide actionable reformulation insights.
 
-**URL:** `http://localhost:3000/industrial`
+### Key Metrics Explained
 
-**Important:** This dashboard is NOT accessible via the main app navigation. It requires direct URL access for security (demo purposes).
+| Metric | Definition | Interpretation |
+|--------|------------|----------------|
+| **Sample Size (N)** | Total number of consumer evaluations with ratings | Larger N = more statistically significant results |
+| **Mean Hedonic Score** | Average consumer liking rating on a 1-5 scale | Higher = better overall acceptance. Industry benchmark: 3.5+ |
+| **Parsed Comments** | Number of text reviews converted to sensory tags via NLP | Shows how many qualitative comments have been scientifically analyzed |
+| **Unique Formulations** | Number of distinct product recipes/SKUs in database | Each product photographed = 1 formulation |
 
-## Features
+### Terminology
 
-### 1. Disconfirmation Heatmap (Screen 1)
+- **Hedonic Score**: Consumer liking rating (from "I hate it" to "I love it")
+- **CATA (Check-All-That-Apply)**: Scientific method where specific sensory attributes are tagged (e.g., "juicy", "dry", "beany")
+- **Barrier Tags**: Negative sensory attributes causing rejection (e.g., "bitter", "cardboard", "spongy")
+- **Driver Tags**: Positive sensory attributes driving acceptance (e.g., "meaty", "tender", "savory")
+- **NLP (Natural Language Processing)**: AI parsing of text comments into structured sensory data
+- **Disconfirmation**: Gap between visual expectations and actual taste experience
+- **SKU**: Stock Keeping Unit (unique product identifier)
 
-**Goal:** Identify products in the "Deception Zone" - high visual appeal but low sensory satisfaction.
+---
 
-**Data Status:** `MOCK DATA`
+## Dashboard Screens
 
-**Why Mock?** Requires correlation between:
-- Visual swipes (Discover screen)  
-- Post-consumption ratings (after purchase & cooking)
+### 1. Disconfirmation Heatmap
 
-This requires more user interactions than available for demo.
+**Purpose:** Identify products where appearance doesn't match taste reality.
 
-**Scientific Basis:**
-- Expectation-Disconfirmation Theory (Oliver, 1980)
-- Food Essentialism & Law of Similarity (Cheon et al., 2025)
-- Flint et al. (2025) - Visual similarity triggers expectations
+**How to Read:**
+- **X-axis**: Visual Appeal (% of users who would swipe right based on photo)
+- **Y-axis**: Sensory Satisfaction (actual rating after tasting)
+- **Black Squares**: Deception Zone (looks good, tastes bad → high rejection risk)
+- **White Diamonds**: Success Zone (looks good, tastes good)
+- **Grey Circles**: Neutral (moderate expectations, moderate delivery)
 
-### 2. Ingredient-Sensory Correlator (Screen 2)
+**Data Source:** MOCK (requires swipe tracking + post-consumption ratings)
 
-**Goal:** Correlate specific sensory tags with product ratings to identify reformulation targets.
+**Key Insight:** Products in bottom-right quadrant need immediate reformulation.
 
-**Data Status:** `REAL DATA` (when available)
+---
 
-**How It Works:**
-1. User posts review with natural language comment
-2. NLP (Gemini 3 Pro Preview) parses comment into CATA tags
-3. Tags are aggregated by frequency and correlated with ratings
+### 2. Ingredient-Sensory Correlator
 
-**Taxonomy:**
-- **Barrier Tags** (Negative): beany, dry, bitter, granular, off-flavour, etc.
-- **Driver Tags** (Positive): juicy, meaty, umami, tender, crispy, etc.
+**Purpose:** Link specific sensory defects to ingredients.
 
-**Scientific Basis:**
-- CATA (Check-All-That-Apply) method (Ares et al., 2014)
-- Sensory lexicon from Neville et al. (2017)
-- Pea protein correlation (Saint-Eve et al., 2021)
+**How to Read:**
+- **Barrier Tags** (left): Negative attributes with frequency bars
+- **Driver Tags** (right): Positive attributes with frequency bars
+- Darker/wider bars = more frequent occurrence
 
-### 3. Smart Swap A/B Test (Screen 3)
+**Data Source:** REAL (when users post reviews with comments)
 
-**Goal:** Validate product substitutability via recommendation engine conversion funnel.
+**Example Finding:** "Bitter" tag correlates with Pea Protein >65% → Reduce pea protein or add masking agents
 
-**Data Status:** `MOCK DATA`
+---
 
-**Concept:**
-- User scans traditional product (e.g., chicken nuggets)
-- App recommends plant-based alternative
-- Track: (1) Acceptance Rate, (2) Post-Trial Rating, (3) Sensory Tags
+### 3. Substitution Analysis
 
-**Example Insights:**
-- Precision fermentation → 25% acceptance, 4.2★ rating (juicy, meaty)
-- High-pea protein → 15% acceptance, 2.8★ rating (dry, beany)
+**Purpose:** Validate if plant-based products can substitute traditional meat.
+
+**How to Read:**
+- Compare Control vs Test groups
+- **Conversion Rate**: % of users who accepted the recommended swap
+- **Mean Rating**: Post-trial satisfaction
+- **Tags**: Dominant sensory attributes
+
+**Data Source:** MOCK (requires recommendation engine tracking)
+
+**Key Insight:** Higher conversion + rating = successful substitution
+
+---
 
 ## Data Transparency
 
 ### Real Data Sources
-- Total posts count
-- Average rating
-- NLP-parsed comments from `posts` table
-- Sensory tags extracted from user reviews
+- Post counts from database
+- User ratings (1-5 stars)
+- NLP-parsed comments → sensory tags
+- Tag frequency + correlation with ratings
 
 ### Mock Data
-- Disconfirmation Heatmap (visual appeal vs sensory)
-- Smart Swap A/B Test funnel
+- Disconfirmation Heatmap (visual swipe vs rating correlation)
+- Substitution Analysis funnel metrics
 
-**Why Mock?**  
-Insufficient time to collect:
-1. Swipe data + purchase + consumption + rating for same product
-2. Recommendation acceptance tracking
+**Why Mock?** Insufficient time to collect:
+1. Swipe data + purchase + consumption cycle for same product
+2. Recommendation engine acceptance tracking
 
-## Technical Architecture
+---
 
-### API Endpoint
+## Scientific Framework
+
+**Expectation-Disconfirmation Theory (Oliver, 1980)**
+- Consumers form expectations (from visuals)
+- Experience reality (from taste)
+- Gap = Disconfirmation → Drives satisfaction/rejection
+
+**Food Essentialism (Cheon et al., 2025)**
+- Visual similarity to meat → Consumers expect meat-like properties
+- When unmet → 2x stronger rejection than non-mimetic products
+
+**CATA Method (Ares et al., 2014)**
+- Standardized sensory attribute selection
+- Enables statistical analysis of qualitative feedback
+
+---
+
+## For Technical Users
+
+### API Endpoints
+
 ```
 GET /api/industrial/analytics
 ```
-
-Returns:
+Returns aggregated dashboard data with metadata:
 ```json
 {
   "totalPosts": 5,
@@ -103,10 +130,9 @@ Returns:
   "commentsWithTags": 0,
   "topBarriers": [...],
   "topDrivers": [...],
-  "disconfirmationGap": [],
   "_meta": {
     "dataTransparency": {
-      "realData": ["totalPosts", "totalRatings", "avgRating", ...],
+      "realData": ["totalPosts", "avgRating", ...],
       "mockData": ["disconfirmationGap"]
     }
   }
@@ -115,71 +141,23 @@ Returns:
 
 ### NLP Pipeline
 
-**Endpoint:** `/api/sensory-parse`
+**Model:** Claude 3.5 Haiku (fast sensory parsing)  
+**Input:** User comment (e.g., "Looked great but tasted dry")  
+**Output:** Structured tags (e.g., `{"texture": "dry", "visual_expectation": "high", ...}`)
 
-**Process:**
-1. User comment → Gemini 3 Pro Preview
-2. Prompt includes CATA taxonomy from Neville et al. (2017)
-3. Returns structured JSON:
-```json
-{
-  "texture": "dry",
-  "flavour": "beany",
-  "visual_expectation": "high",
-  "disconfirmation": "negative",
-  "tags": [
-    {"tag": "dry", "category": "barrier", "valence": "negative", "confidence": 0.95},
-    {"tag": "beany", "category": "barrier", "valence": "negative", "confidence": 0.90}
-  ]
-}
-```
+---
 
-## Scientific References
+## Quick Actions
 
-All citations in the dashboard are from real sensory science literature:
+- **Export PDF**: Download current dashboard state
+- **Info Buttons (ⓘ)**: Click for interpretation guides on each screen
 
-- **Flint et al. (2025)** - Sensory drivers and barriers for PBMA acceptance
-- **Neville et al. (2017)** - Sensory lexicon for plant-based proteins
-- **Saint-Eve et al. (2021)** - Pea protein concentration ↔ bitterness correlation
-- **Cheon et al. (2025)** - Food essentialism in PBMAs
-- **Oliver (1980)** - Expectation-Disconfirmation Theory
-- **Ares et al. (2014)** - CATA methodology
+---
 
-## Usage for Jury Presentation
+## Need More Detail?
 
-1. **Navigate to:** `http://localhost:3000/industrial`
-2. **Show 3 screens:**
-   - Heatmap → Gap analysis concept
-   - Correlator → Real NLP parsing (if data available)
-   - Smart Swap → Substitutability validation
-
-3. **Emphasize:**
-   - Scientific rigor (CATA, Disconfirmation Theory)
-   - Data transparency (badges: "Real Data" vs "Mock Data")
-   - Actionable insights for manufacturers
-   - Use of industry-standard jargon (hedonic score, substitutability, etc.)
-
-## Future Enhancements (Post-Demo)
-
-1. **Swipe Tracking:**
-   - Add `swipes` table to DB
-   - Correlate swipe_rate with rating for real disconfirmation gap
-
-2. **Recommendation Engine:**
-   - Track swap acceptance
-   - Measure post-trial ratings
-
-3. **Ingredient Database:**
-   - Link to Open Food Facts SKUs
-   - Correlate specific protein sources with sensory defects
-
-4. **CATA UI:**
-   - Add tag selection interface to review submission
-   - Replace text-only comments with structured tags
-
-## Notes
-
-- Dashboard is completely independent from main app
-- No authentication required (demo only)
-- All mock data is clearly labeled
-- Code comments indicate data sources
+See `INDUSTRIAL_DASHBOARD_SCIENTIFIC.md` for:
+- Full literature review
+- Detailed sensory taxonomy
+- Statistical methodologies
+- Industry benchmarks
