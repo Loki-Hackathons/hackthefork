@@ -1,23 +1,4 @@
-// Helper to safely get user ID (client-side only)
-// This function should only be called from client components ('use client')
-function getUserIdSafe(): string {
-  // During SSR/build, return empty string
-  // These API functions should only be called from client-side code
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  
-  try {
-    // Use require with a try-catch to handle any bundler issues
-    // This is safe because we've already checked for window
-    const cookiesModule = require('@/lib/cookies');
-    return cookiesModule.getUserId();
-  } catch (error) {
-    // Fallback: generate a temporary ID if cookies module fails to load
-    console.warn('Failed to load getUserId, using fallback');
-    return 'temp-' + Math.random().toString(36).substring(7);
-  }
-}
+import { getUserId } from '@/lib/cookies';
 
 export interface Ingredient {
   name: string;
@@ -217,7 +198,7 @@ export async function fetchPosts(): Promise<Post[]> {
     const posts: Post[] = data.posts || [];
     
     // Check upvote status for each post
-    const userId = getUserIdSafe();
+    const userId = getUserId();
     const postsWithUpvotes = await Promise.all(
       posts.map(async (post) => {
         try {
@@ -245,7 +226,7 @@ export async function fetchPosts(): Promise<Post[]> {
 // Toggle upvote on a post
 export async function toggleUpvote(postId: string): Promise<boolean> {
   try {
-    const userId = getUserIdSafe();
+    const userId = getUserId();
     const response = await fetch('/api/upvote', {
       method: 'POST',
       headers: {
@@ -269,7 +250,7 @@ export async function toggleUpvote(postId: string): Promise<boolean> {
 // Fetch user statistics
 export async function fetchUserStats(): Promise<UserStats> {
   try {
-    const userId = getUserIdSafe();
+    const userId = getUserId();
     const response = await fetch(`/api/stats?user_id=${userId}`);
     
     if (!response.ok) {
