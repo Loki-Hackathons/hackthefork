@@ -18,7 +18,7 @@ const mockChallenges = [
   {
     id: 2,
     title: 'Battle Squad',
-    description: 'Top score entre amis cette semaine',
+    description: 'Top score among friends this week',
     progress: 0,
     total: 100,
     reward: 1000,
@@ -145,7 +145,7 @@ export function ChallengesScreen() {
 
       {/* Active Challenges */}
       <div className="px-6 mb-8">
-        <h2 className="text-white text-xl mb-4">En cours</h2>
+        <h2 className="text-white text-xl mb-4">In Progress</h2>
         <div className="space-y-3">
           {mockChallenges.map((challenge) => (
             <ChallengeCard key={challenge.id} challenge={challenge} />

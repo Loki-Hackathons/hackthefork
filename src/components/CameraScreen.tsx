@@ -57,7 +57,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
   };
 
   return (
-    <div className="h-full bg-black flex flex-col relative overflow-hidden">
+    <div className="h-full bg-black flex flex-col relative overflow-hidden pb-24">
       <AnimatePresence mode="wait">
         {mode === 'camera' && (
           <CameraView

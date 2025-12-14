@@ -161,7 +161,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             <div className="text-white text-2xl mb-1">
               {stats?.avg_vegetal_score || 0}
             </div>
-            <div className="text-white/50 text-sm">végétal</div>
+            <div className="text-white/50 text-sm">plant-based</div>
           </div>
           <div className="text-center">
             <div className="text-white text-2xl mb-1">
@@ -175,7 +175,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-400">Score moyen: {totalScore}/100</span>
+            <span className="text-yellow-400">Average score: {totalScore}/100</span>
           </div>
           <div className="flex items-center gap-2 text-white/70">
             <Flame className="w-4 h-4 text-emerald-400" />
@@ -237,10 +237,10 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             >
               {/* Axes */}
               {[
-                { angle: 0, label: 'Santé', value: stats?.avg_health_score || 0, color: '#10b981' },
-                { angle: 90, label: 'Carbone', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
-                { angle: 180, label: 'Végétal', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
-                { angle: 270, label: 'Moyenne', value: totalScore, color: '#f59e0b' },
+                { angle: 0, label: 'Health', value: stats?.avg_health_score || 0, color: '#10b981' },
+                { angle: 90, label: 'Carbon', value: stats?.avg_carbon_score || 0, color: '#3b82f6' },
+                { angle: 180, label: 'Plant-based', value: stats?.avg_vegetal_score || 0, color: '#8b5cf6' },
+                { angle: 270, label: 'Average', value: totalScore, color: '#f59e0b' },
               ].map((axis, idx) => {
                 const rad = (axis.angle * Math.PI) / 180;
                 const maxRadius = 80;
@@ -352,7 +352,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
       <div className="px-6 pb-6">
         <h2 className="text-white text-xl mb-4 flex items-center gap-2">
           <Leaf className="w-5 h-5 text-emerald-400" />
-          Statistiques
+          Statistics
         </h2>
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 p-6 space-y-4">
