@@ -391,16 +391,34 @@ function PostFlow({ imageFile, imageUrl, onPost, onCancel }: PostFlowProps) {
                     }),
                   });
                   
+                  // Get response text first to check if it's valid JSON
+                  const responseText = await response.text();
+                  
                   if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    // Try to parse as JSON, but handle non-JSON error responses
+                    let errorData: any;
+                    try {
+                      errorData = JSON.parse(responseText);
+                    } catch {
+                      // If not JSON, use the raw text or a default error
+                      errorData = { error: responseText || `Analysis failed: ${response.status}` };
+                    }
                     throw new Error(errorData.error || `Analysis failed: ${response.status}`);
                   }
                   
-                  const data = await response.json();
+                  // Parse the successful response
+                  let data: any;
+                  try {
+                    data = JSON.parse(responseText);
+                  } catch (parseError) {
+                    console.error('Failed to parse response as JSON:', parseError);
+                    console.error('Response text:', responseText.substring(0, 500));
+                    throw new Error('Invalid JSON response from server. Please try again.');
+                  }
                   
                   // Validate response
                   if (!data.dishName || !data.ingredients || !data.scores) {
-                    throw new Error('Invalid analysis response');
+                    throw new Error('Invalid analysis response: missing required fields');
                   }
                   
                   setAnalysisData(data);

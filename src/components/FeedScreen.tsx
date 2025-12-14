@@ -278,7 +278,12 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
             }}
           >
             <motion.div
-              className="absolute bottom-0 left-0 right-0 bg-black/95 rounded-t-3xl flex flex-col max-h-[85vh]"
+              className="absolute left-0 right-0 bg-black/95 rounded-t-3xl flex flex-col"
+              style={{ 
+                bottom: '80px',
+                maxHeight: 'calc(100vh - 100px)',
+                height: 'calc(100vh - 100px)'
+              }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -286,8 +291,8 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/10">
-                <h2 className="text-white text-2xl font-bold">Comments</h2>
+              <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
+                <h2 className="text-white text-xl font-bold">Comments</h2>
                 <button
                   onClick={() => {
                     setOpenCommentsPostId(null);
@@ -299,8 +304,43 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
                 </button>
               </div>
 
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {/* Comment Input - Positionné en haut pour être toujours visible */}
+              <div className="px-4 pt-3 pb-3 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-base flex-shrink-0">
+                    👤
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2 border border-white/10">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && newComment.trim()) {
+                          handleAddComment(openCommentsPostId!);
+                        }
+                      }}
+                      placeholder="Ajouter un commentaire..."
+                      className="flex-1 bg-transparent text-white placeholder-white/40 text-sm outline-none"
+                    />
+                    <motion.button
+                      onClick={() => handleAddComment(openCommentsPostId!)}
+                      disabled={!newComment.trim()}
+                      className={`p-2 rounded-full transition-colors ${
+                        newComment.trim()
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-white/10 text-white/30'
+                      }`}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Send className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments List - Scrollable avec plus d'espace */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: 0 }}>
                 {isLoadingComments ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-white/60">Loading...</div>
@@ -339,41 +379,6 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
                     );
                   })
                 )}
-              </div>
-
-              {/* Comment Input */}
-              <div className="p-6 border-t border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg flex-shrink-0">
-                    👤
-                  </div>
-                  <div className="flex-1 flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2 border border-white/10">
-                    <input
-                      type="text"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && newComment.trim()) {
-                          handleAddComment(openCommentsPostId!);
-                        }
-                      }}
-                      placeholder="Ajouter un commentaire..."
-                      className="flex-1 bg-transparent text-white placeholder-white/40 text-sm outline-none"
-                    />
-                    <motion.button
-                      onClick={() => handleAddComment(openCommentsPostId!)}
-                      disabled={!newComment.trim()}
-                      className={`p-2 rounded-full transition-colors ${
-                        newComment.trim()
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-white/10 text-white/30'
-                      }`}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <Send className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </motion.div>
