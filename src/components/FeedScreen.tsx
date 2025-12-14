@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, MessageCircle, Share2, Bookmark, Leaf, Apple, Cloud, Sparkles, X, Send, Copy, Plus, MoreVertical } from 'lucide-react';
 import type { Screen } from './MainApp';
-import { fetchPosts, toggleUpvote, type Post } from '@/services/api';
+import { fetchPosts, toggleUpvote, fetchComments, createComment, type Post, type Comment } from '@/services/api';
+import { getUserId, getUserName } from '@/lib/cookies';
 
 // Helper function to format time ago
 function getTimeAgo(dateString: string): string {
@@ -28,16 +29,7 @@ function getUserAvatar(userId: string): string {
   return avatars[hash % avatars.length];
 }
 
-interface Comment {
-  id: number;
-  user: {
-    name: string;
-    username: string;
-    avatar: string;
-  };
-  text: string;
-  timeAgo: string;
-}
+// Comment interface is now imported from api.ts
 
 const getScoreColor = (score: number) => {
   if (score >= 80) return 'bg-emerald-500';
@@ -55,6 +47,8 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
   const [sharePostId, setSharePostId] = useState<string | null>(null);
   const [openScoreDetailsPostId, setOpenScoreDetailsPostId] = useState<string | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
 
   const mockContacts = [
     { id: 1, name: 'Florian', avatar: '👨' },
@@ -133,13 +127,60 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
     setCurrentIndex(index);
   };
 
-  const handleAddComment = (postId: string) => {
+  const handleAddComment = async (postId: string) => {
     if (!newComment.trim()) return;
-    // For now, just clear the comment (comments feature not implemented in backend)
-    setNewComment('');
+    
+    const commentText = newComment.trim();
+    setNewComment(''); // Clear input immediately for better UX
+    
+    try {
+      const comment = await createComment(postId, commentText);
+      // Add comment to local state
+      setComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), comment]
+      }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      // Restore comment text on error so user can retry
+      setNewComment(commentText);
+    }
   };
 
+  const loadComments = async (postId: string) => {
+    if (comments[postId] !== undefined) {
+      // Comments already loaded
+      return;
+    }
+
+    setLoadingComments(prev => ({ ...prev, [postId]: true }));
+    try {
+      const fetchedComments = await fetchComments(postId);
+      setComments(prev => ({
+        ...prev,
+        [postId]: fetchedComments
+      }));
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      setComments(prev => ({
+        ...prev,
+        [postId]: []
+      }));
+    } finally {
+      setLoadingComments(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  // Load comments when comments overlay opens
+  useEffect(() => {
+    if (openCommentsPostId) {
+      loadComments(openCommentsPostId);
+    }
+  }, [openCommentsPostId]);
+
   const currentPost = openCommentsPostId ? posts.find(p => p.id === openCommentsPostId) : null;
+  const currentPostComments = openCommentsPostId ? (comments[openCommentsPostId] || []) : [];
+  const isLoadingComments = openCommentsPostId ? (loadingComments[openCommentsPostId] || false) : false;
 
   if (loading) {
     return (
@@ -208,6 +249,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
           onSave={() => handleSave(post.id)}
           onScoreClick={() => setOpenScoreDetailsPostId(post.id)}
           isSaved={savedPosts.has(post.id)}
+          commentCount={comments[post.id]?.length || post.comment_count || 0}
         />
       ))}
 
@@ -248,9 +290,44 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
 
               {/* Comments List */}
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                <p className="text-white/60 text-center py-8">
-                  Aucun commentaire pour le moment
-                </p>
+                {isLoadingComments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-white/60">Chargement...</div>
+                  </div>
+                ) : currentPostComments.length === 0 ? (
+                  <p className="text-white/60 text-center py-8">
+                    Aucun commentaire pour le moment
+                  </p>
+                ) : (
+                  currentPostComments.map((comment) => {
+                    const commentUserName = getUserName() || 'User';
+                    const commentUserAvatar = getUserAvatar(comment.user_id);
+                    const commentTimeAgo = getTimeAgo(comment.created_at);
+                    const isOwnComment = comment.user_id === getUserId();
+                    
+                    return (
+                      <motion.div
+                        key={comment.id}
+                        className="flex gap-3"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg flex-shrink-0">
+                          {commentUserAvatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-semibold text-sm">
+                              {isOwnComment ? 'Vous' : commentUserName}
+                            </span>
+                            <span className="text-white/50 text-xs">{commentTimeAgo}</span>
+                          </div>
+                          <p className="text-white/90 text-sm leading-relaxed">{comment.text}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Comment Input */}
@@ -549,6 +626,7 @@ interface FeedPostProps {
   onSave: () => void;
   onScoreClick: () => void;
   isSaved: boolean;
+  commentCount?: number;
 }
 
 function FeedPost({ 
@@ -561,7 +639,8 @@ function FeedPost({
   onShareClick,
   onSave,
   onScoreClick,
-  isSaved
+  isSaved,
+  commentCount = 0
 }: FeedPostProps) {
   const [showHeart, setShowHeart] = useState(false);
   const avatar = getUserAvatar(post.user_id);
@@ -702,7 +781,9 @@ function FeedPost({
               <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border-2 border-white/20 group-hover:border-white/40 transition-colors">
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-white text-xs font-medium drop-shadow-lg">0</span>
+              <span className="text-white text-xs font-medium drop-shadow-lg">
+                {commentCount}
+              </span>
             </motion.button>
 
             {/* Share */}

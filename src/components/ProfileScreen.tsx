@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Trophy, TrendingUp, Settings, Leaf, Flame, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Trophy, TrendingUp, Settings, Leaf, Flame, Users, MessageCircle } from 'lucide-react';
 import { fetchUserStats, type UserStats } from '@/services/api';
-import { getUserId } from '@/lib/cookies';
+import { getUserId, getUserName, setUserName } from '@/lib/cookies';
+import { SettingsScreen } from './SettingsScreen';
+import type { Screen } from './MainApp';
 
 const mockHistory = [
   { id: 1, score: 95, image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?w=400' },
@@ -25,17 +27,41 @@ const mockLeaderboard = [
   { rank: 4, name: 'Thomas', username: '@thomas.d', score: 398, avatar: '👨', isMe: false },
 ];
 
-export function ProfileScreen() {
+interface ProfileScreenProps {
+  onNavigate?: (screen: Screen) => void;
+}
+
+export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [userName, setUserNameState] = useState(getUserName());
   const startPos = useRef({ x: 0, y: 0 });
   const userId = getUserId();
 
   useEffect(() => {
     loadStats();
+    loadUserName();
   }, []);
+
+  const loadUserName = async () => {
+    // Try to load name from database, fallback to cookie
+    try {
+      const response = await fetch(`/api/user?user_id=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user?.name) {
+          setUserNameState(data.user.name);
+          setUserName(data.user.name); // Also update cookie
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user name from database:', error);
+      // Fallback to cookie is already handled by getUserName()
+    }
+  };
 
   const loadStats = async () => {
     setLoading(true);
@@ -108,14 +134,17 @@ export function ProfileScreen() {
             </div>
             <div>
               <h1 className="text-white text-2xl">
-                Mon Profil
+                {userName || 'Mon Profil'}
               </h1>
               <div className="text-white/50 text-sm">
-                {userId.slice(0, 8)}...
+                {userName ? userId.slice(0, 8) + '...' : userId.slice(0, 8) + '...'}
               </div>
             </div>
           </div>
-          <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
             <Settings className="w-5 h-5 text-white" />
           </button>
         </div>
@@ -156,8 +185,16 @@ export function ProfileScreen() {
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <button className="flex-1 py-2.5 bg-white text-black rounded-xl">
-            Modifier le profil
+          <button 
+            onClick={() => {
+              if (onNavigate) {
+                onNavigate('messages');
+              }
+            }}
+            className="flex-1 py-2.5 bg-white text-black rounded-xl flex items-center justify-center gap-2 font-semibold"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Messages
           </button>
           <button className="flex-1 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl border border-white/20">
             Partager
@@ -339,6 +376,19 @@ export function ProfileScreen() {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <SettingsScreen 
+            onClose={() => {
+              setShowSettings(false);
+              // Reload user name after settings close
+              setUserNameState(getUserName());
+            }} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

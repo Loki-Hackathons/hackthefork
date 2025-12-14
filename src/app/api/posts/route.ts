@@ -56,9 +56,20 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching ingredients:', ingredientsError);
         }
 
+        // Get comment count for this post
+        const { count: commentCount, error: commentCountError } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id);
+
+        if (commentCountError) {
+          console.error('Error counting comments:', commentCountError);
+        }
+
         return {
           ...post,
           upvote_count: count || 0,
+          comment_count: commentCount || 0,
           ingredients: ingredients || []
         };
       })
@@ -81,7 +92,28 @@ export async function POST(request: NextRequest) {
     const imageFile = formData.get('image') as File;
     const userId = formData.get('user_id') as string;
     const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null;
-    const comment = formData.get('comment') as string | null;
+    const commentRaw = formData.get('comment') as string | null;
+    
+    // Validate rating if provided
+    if (rating !== null && (rating < 1 || rating > 5)) {
+      return NextResponse.json(
+        { error: 'Rating must be between 1 and 5' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate and trim comment if provided
+    let comment: string | null = null;
+    if (commentRaw) {
+      const trimmedComment = commentRaw.trim();
+      if (trimmedComment.length > 200) {
+        return NextResponse.json(
+          { error: 'Comment must be 200 characters or less' },
+          { status: 400 }
+        );
+      }
+      comment = trimmedComment.length > 0 ? trimmedComment : null;
+    }
 
     if (!imageFile || !userId) {
       return NextResponse.json(
@@ -157,7 +189,7 @@ export async function POST(request: NextRequest) {
     console.log('Uploaded file path:', uploadedPath);
     console.log('Generated public URL:', publicUrl);
 
-    // Ensure user exists
+    // Ensure user exists (name will be updated separately via settings API)
     const { error: userError } = await supabase
       .from('users')
       .upsert({ id: userId, created_at: new Date().toISOString() }, { onConflict: 'id' });

@@ -33,6 +33,14 @@ export interface MealAnalysisResponse {
   note: string;
 }
 
+export interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  text: string;
+  created_at: string;
+}
+
 export interface Post {
   id: string;
   user_id: string;
@@ -42,6 +50,7 @@ export interface Post {
   health_score: number;
   carbon_score: number;
   upvote_count?: number;
+  comment_count?: number;
   is_upvoted?: boolean;
   ingredients?: Array<{
     id: string;
@@ -308,6 +317,52 @@ export async function createPost(
     return data.post;
   } catch (error: any) {
     console.error('Error creating post:', error);
+    throw error;
+  }
+}
+
+// Fetch comments for a post
+export async function fetchComments(postId: string): Promise<Comment[]> {
+  try {
+    const response = await fetch(`/api/comments?post_id=${postId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    
+    const data = await response.json();
+    return data.comments || [];
+  } catch (error: any) {
+    console.error('Error fetching comments:', error);
+    return []; // Return empty array on error
+  }
+}
+
+// Create a new comment
+export async function createComment(postId: string, text: string): Promise<Comment> {
+  try {
+    const userId = getUserId();
+    const response = await fetch('/api/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        post_id: postId,
+        user_id: userId,
+        text: text.trim()
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create comment');
+    }
+    
+    const data = await response.json();
+    return data.comment;
+  } catch (error: any) {
+    console.error('Error creating comment:', error);
     throw error;
   }
 }
