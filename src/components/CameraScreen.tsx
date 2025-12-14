@@ -496,7 +496,6 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
-<<<<<<< HEAD
       {foodFactsResult && !error && (
         <div className="px-6 mb-6">
           <motion.div
