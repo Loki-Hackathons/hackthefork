@@ -20,6 +20,14 @@ export type Screen = 'feed' | 'swipe' | 'camera' | 'shop' | 'profile' | 'challen
 
 export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppProps) {
   const [currentScreen, setCurrentScreen] = useState<Screen>('feed');
+  const [selectedPostId, setSelectedPostId] = useState<string | undefined>(undefined);
+  const [selectedPostImageUrl, setSelectedPostImageUrl] = useState<string | undefined>(undefined);
+
+  const handleNavigateWithPost = (screen: Screen, postId?: string, postImageUrl?: string) => {
+    setSelectedPostId(postId);
+    setSelectedPostImageUrl(postImageUrl);
+    setCurrentScreen(screen);
+  };
 
   // Initialize user_id cookie on mount
   useEffect(() => {
@@ -38,10 +46,16 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
     <div className="h-screen w-screen bg-black overflow-hidden flex flex-col">
       {/* Main content area */}
       <div className="flex-1 overflow-hidden relative">
-        {currentScreen === 'feed' && <FeedScreen onNavigate={setCurrentScreen} />}
+        {currentScreen === 'feed' && <FeedScreen onNavigate={handleNavigateWithPost} />}
         {currentScreen === 'swipe' && <TinderOnboarding isRevisit={true} onComplete={() => {}} />}
         {currentScreen === 'camera' && <CameraScreen onNavigate={setCurrentScreen} />}
-        {currentScreen === 'shop' && <ShopScreen onNavigate={setCurrentScreen} />}
+        {currentScreen === 'shop' && (
+          <ShopScreen 
+            onNavigate={setCurrentScreen} 
+            postId={selectedPostId}
+            postImageUrl={selectedPostImageUrl}
+          />
+        )}
         {currentScreen === 'profile' && <ProfileScreen onNavigate={setCurrentScreen} />}
         {currentScreen === 'challenges' && <ChallengesScreen />}
         {currentScreen === 'messages' && <MessagesScreen onNavigate={setCurrentScreen} />}
