@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, TrendingUp, Settings, Leaf, Flame, Users, MessageCircle } from 'lucide-react';
 import { fetchUserStats, type UserStats } from '@/services/api';
-import { getUserId, getUserName, setUserName } from '@/lib/cookies';
+import { getUserId, getUserName, setUserName, getUserAvatar, getUserAvatarImage, setUserAvatar, setUserAvatarImage } from '@/lib/cookies';
 import { SettingsScreen } from './SettingsScreen';
 import type { Screen } from './MainApp';
 
@@ -38,6 +38,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [userName, setUserNameState] = useState(getUserName());
+  const [avatarRefresh, setAvatarRefresh] = useState(0); // Force re-render when avatar changes
   const startPos = useRef({ x: 0, y: 0 });
   const userId = getUserId();
 
@@ -47,7 +48,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
   }, []);
 
   const loadUserName = async () => {
-    // Try to load name from database, fallback to cookie
+    // Try to load name and avatar from database, fallback to cookie
     try {
       const response = await fetch(`/api/user?user_id=${userId}`);
       if (response.ok) {
@@ -56,9 +57,15 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           setUserNameState(data.user.name);
           setUserName(data.user.name); // Also update cookie
         }
+        // Update avatar from database if available
+        if (data.user?.avatar_image_url) {
+          setUserAvatarImage(data.user.avatar_image_url);
+        } else if (data.user?.avatar) {
+          setUserAvatar(data.user.avatar);
+        }
       }
     } catch (error) {
-      console.error('Error loading user name from database:', error);
+      console.error('Error loading user data from database:', error);
       // Fallback to cookie is already handled by getUserName()
     }
   };
@@ -75,14 +82,27 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
     }
   };
 
-  // Helper to get avatar from user_id
+  // Helper to get avatar from user_id (fallback)
   const getAvatar = (id: string) => {
     const avatars = ['👩‍🍳', '👨‍🍳', '👩', '👨', '🧑‍🍳'];
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return avatars[hash % avatars.length];
   };
 
-  const avatar = getAvatar(userId);
+  // Get avatar from cookie/image if set, otherwise use default based on user_id
+  // Use avatarRefresh to force re-render when avatar changes
+  const savedImage = getUserAvatarImage();
+  const savedAvatar = getUserAvatar();
+  // Check if savedImage is a URL (starts with http) or base64 (starts with data:)
+  const isImageUrl = savedImage && (savedImage.startsWith('http') || savedImage.startsWith('https'));
+  const avatar = savedImage || savedAvatar || getAvatar(userId);
+  const isImageAvatar = !!savedImage;
+  
+  // This ensures the avatar updates when settings close
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Avatar is computed in render, this just forces a re-render check
+  }, [avatarRefresh]);
   const totalScore = stats 
     ? Math.round((stats.avg_vegetal_score + stats.avg_health_score + stats.avg_carbon_score) / 3)
     : 0;
@@ -129,8 +149,16 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
       <div className="pt-12 pb-6 px-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10">
-              {avatar}
+            <div className="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center text-4xl border-4 border-white/10 overflow-hidden">
+              {isImageAvatar ? (
+                <img 
+                  src={avatar} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                avatar
+              )}
             </div>
             <div>
               <h1 className="text-white text-2xl">
@@ -383,8 +411,9 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           <SettingsScreen 
             onClose={() => {
               setShowSettings(false);
-              // Reload user name after settings close
+              // Reload user name and avatar after settings close
               setUserNameState(getUserName());
+              setAvatarRefresh(prev => prev + 1); // Force re-render to show new avatar
             }} 
           />
         )}

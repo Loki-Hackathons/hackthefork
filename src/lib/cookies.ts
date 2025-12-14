@@ -5,6 +5,8 @@ import Cookies from 'js-cookie';
 const USER_ID_COOKIE = 'htf_user_id';
 const ONBOARDING_COMPLETE_COOKIE = 'htf_onboarding_complete';
 const USER_NAME_COOKIE = 'htf_user_name';
+const USER_AVATAR_COOKIE = 'htf_user_avatar';
+const USER_AVATAR_IMAGE_COOKIE = 'htf_user_avatar_image'; // Base64 image data
 const COOKIE_EXPIRY_DAYS = 365;
 
 function generateUserId(): string {
@@ -71,4 +73,69 @@ export function setUserName(name: string): void {
     expires: COOKIE_EXPIRY_DAYS,
     sameSite: 'lax'
   });
+}
+
+export function getUserAvatar(): string {
+  if (typeof window === 'undefined') return '';
+  return Cookies.get(USER_AVATAR_COOKIE) || '';
+}
+
+export function setUserAvatar(avatar: string): void {
+  if (typeof window === 'undefined') return;
+  
+  Cookies.set(USER_AVATAR_COOKIE, avatar, { 
+    expires: COOKIE_EXPIRY_DAYS,
+    sameSite: 'lax'
+  });
+}
+
+export function getUserAvatarImage(): string {
+  if (typeof window === 'undefined') return '';
+  // Check cookie first, then localStorage as fallback
+  const cookieImage = Cookies.get(USER_AVATAR_IMAGE_COOKIE);
+  if (cookieImage) return cookieImage;
+  
+  try {
+    const localStorageImage = localStorage.getItem(USER_AVATAR_IMAGE_COOKIE);
+    return localStorageImage || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+export function setUserAvatarImage(imageData: string): void {
+  if (typeof window === 'undefined') return;
+  
+  // Note: Cookies have a 4KB limit, but base64 images can be larger
+  // For larger images, we'll use localStorage as a fallback
+  try {
+    if (imageData.length > 3000) {
+      // Use localStorage for larger images
+      localStorage.setItem(USER_AVATAR_IMAGE_COOKIE, imageData);
+      // Clear cookie if it exists
+      Cookies.remove(USER_AVATAR_IMAGE_COOKIE);
+    } else {
+      // Use cookie for smaller images
+      Cookies.set(USER_AVATAR_IMAGE_COOKIE, imageData, { 
+        expires: COOKIE_EXPIRY_DAYS,
+        sameSite: 'lax'
+      });
+      // Clear localStorage if it exists
+      localStorage.removeItem(USER_AVATAR_IMAGE_COOKIE);
+    }
+  } catch (error) {
+    console.error('Error saving avatar image:', error);
+    // Fallback to localStorage if cookie fails
+    try {
+      localStorage.setItem(USER_AVATAR_IMAGE_COOKIE, imageData);
+    } catch (e) {
+      console.error('Error saving to localStorage:', e);
+    }
+  }
+}
+
+export function removeUserAvatarImage(): void {
+  if (typeof window === 'undefined') return;
+  Cookies.remove(USER_AVATAR_IMAGE_COOKIE);
+  localStorage.removeItem(USER_AVATAR_IMAGE_COOKIE);
 }
