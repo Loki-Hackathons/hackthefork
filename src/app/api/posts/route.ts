@@ -60,11 +60,36 @@ export async function GET(request: NextRequest) {
           console.error('Error counting comments:', commentCountError);
         }
 
+        // Get user name for this post
+        let userName: string | null = null;
+        try {
+          const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', post.user_id)
+            .single();
+          
+          if (userError) {
+            // If column doesn't exist (42703) or user not found (PGRST116), that's okay
+            if (userError.code !== '42703' && userError.code !== 'PGRST116') {
+              console.warn(`Error fetching user name for ${post.user_id}:`, userError);
+            }
+          } else if (user?.name) {
+            userName = user.name;
+          }
+        } catch (userError: any) {
+          // Column might not exist, that's okay
+          if (userError.code !== '42703' && userError.code !== 'PGRST116') {
+            console.warn('Error fetching user name:', userError);
+          }
+        }
+
         return {
           ...post,
           upvote_count: count || 0,
           comment_count: commentCount || 0,
-          ingredients: ingredients || []
+          ingredients: ingredients || [],
+          user_name: userName || undefined
         };
       })
     );
