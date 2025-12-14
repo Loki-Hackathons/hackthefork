@@ -49,7 +49,7 @@ const dishes = [
 
 export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboardingProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [liked, setLiked] = useState<number[]>([]);
+  const [liked, setLiked] = useState<(number | string)[]>([]);
   const [showParticles, setShowParticles] = useState(false);
   const [particleKey, setParticleKey] = useState(0); // Key to force re-render of particles
   // We track the exit direction: 1 for right, -1 for left
