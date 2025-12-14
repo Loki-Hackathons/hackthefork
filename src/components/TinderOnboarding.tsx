@@ -131,10 +131,10 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
           transition={{ delay: 0.2 }}
         >
           <h2 className="text-white text-3xl font-bold mb-2 text-center">
-            Bienvenue ! 👋
+            Welcome! 👋
           </h2>
           <p className="text-white/70 text-center mb-8 text-lg">
-            Comment veux-tu qu'on t'appelle ?
+            What should we call you?
           </p>
           
           <div className="space-y-4">
@@ -147,7 +147,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
                   handleNameSubmit();
                 }
               }}
-              placeholder="Ton prénom"
+              placeholder="Your first name"
               className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-2xl text-white text-lg placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors"
               autoFocus
             />
@@ -159,7 +159,7 @@ export function TinderOnboarding({ onComplete, isRevisit = false }: TinderOnboar
               whileTap={{ scale: 0.95 }}
               whileHover={userName.trim() ? { scale: 1.02 } : {}}
             >
-              <span>Continuer</span>
+              <span>Continue</span>
               <ArrowRight className="w-5 h-5" />
             </motion.button>
           </div>
@@ -373,7 +373,7 @@ function SwipeCard({ dish, onSwipe }: SwipeCardProps) {
         </div>
         {'products' in dish && dish.products && dish.products.length > 0 && (
           <div className="mt-4 space-y-2">
-            <p className="text-white/80 text-xs font-medium mb-2">Produits recommandés (Open Food Facts):</p>
+            <p className="text-white/80 text-xs font-medium mb-2">Recommended products (Open Food Facts):</p>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {dish.products.slice(0, 3).map((product, idx) => (
                 <div

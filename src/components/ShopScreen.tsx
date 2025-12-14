@@ -98,7 +98,7 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
     setOrderMessage(null);
     
     try {
-      console.log('🛒 Démarrage de l\'automatisation Auchan...');
+      console.log('🛒 Starting Auchan automation...');
       
       const response = await fetch('/api/order', {
         method: 'POST',
@@ -113,17 +113,17 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
       const data = await response.json();
 
       if (response.ok) {
-        setOrderMessage('✅ Automatisation démarrée ! Le navigateur va s\'ouvrir...');
+        setOrderMessage('✅ Automation started! The browser will open...');
         console.log('✅ Réponse du serveur:', data);
         
         // Effacer le message après 5 secondes
         setTimeout(() => setOrderMessage(null), 5000);
       } else {
-        setOrderMessage('❌ Erreur: ' + (data.message || 'Impossible de démarrer l\'automatisation'));
+        setOrderMessage('❌ Error: ' + (data.message || 'Unable to start automation'));
       }
     } catch (error) {
-      console.error('❌ Erreur lors de l\'appel API:', error);
-      setOrderMessage('❌ Erreur: Impossible de démarrer l\'automatisation. Vérifiez que la session est sauvegardée.');
+      console.error('❌ Error during API call:', error);
+      setOrderMessage('❌ Error: Unable to start automation. Make sure the session is saved.');
     } finally {
       setOrderLoading(false);
     }

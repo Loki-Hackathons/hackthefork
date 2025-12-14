@@ -134,7 +134,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             </div>
             <div>
               <h1 className="text-white text-2xl">
-                {userName || 'Mon Profil'}
+                {userName || 'My Profile'}
               </h1>
               <div className="text-white/50 text-sm">
                 {userName ? userId.slice(0, 8) + '...' : userId.slice(0, 8) + '...'}
@@ -167,7 +167,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             <div className="text-white text-2xl mb-1">
               {stats?.avg_carbon_score || 0}
             </div>
-            <div className="text-white/50 text-sm">carbone</div>
+            <div className="text-white/50 text-sm">carbon</div>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           </div>
           <div className="flex items-center gap-2 text-white/70">
             <Flame className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm">{stats?.total_co2_avoided || 0}kg de CO₂ économisés</span>
+            <span className="text-sm">{stats?.total_co2_avoided || 0}kg of CO₂ saved</span>
           </div>
         </div>
 
@@ -197,7 +197,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
             Messages
           </button>
           <button className="flex-1 py-2.5 bg-white/10 backdrop-blur-sm text-white rounded-xl border border-white/20">
-            Partager
+            Share
           </button>
           <button className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
             <Users className="w-5 h-5 text-white" />
@@ -209,7 +209,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
       <div className="px-6 py-8">
         <h2 className="text-white text-xl mb-4 flex items-center gap-2">
           <Leaf className="w-5 h-5 text-emerald-400" />
-          Impact Écologique
+          Environmental Impact
         </h2>
         
         <div className="bg-emerald-950/50 rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20">
@@ -343,7 +343,7 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           </div>
           
           <p className="text-white/40 text-center text-sm mt-4">
-            Glisse pour tourner
+            Swipe to rotate
           </p>
         </div>
       </div>
@@ -357,20 +357,20 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-white/70">Score végétal moyen</span>
+            <span className="text-white/70">Average plant-based score</span>
             <span className="text-white text-xl font-bold">{stats?.avg_vegetal_score || 0}/100</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-white/70">Score santé moyen</span>
+            <span className="text-white/70">Average health score</span>
             <span className="text-white text-xl font-bold">{stats?.avg_health_score || 0}/100</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-white/70">Score carbone moyen</span>
+            <span className="text-white/70">Average carbon score</span>
             <span className="text-white text-xl font-bold">{stats?.avg_carbon_score || 0}/100</span>
           </div>
           <div className="pt-4 border-t border-white/10">
             <div className="flex items-center justify-between">
-              <span className="text-white/70">Total CO₂ économisé</span>
+              <span className="text-white/70">Total CO₂ saved</span>
               <span className="text-emerald-400 text-xl font-bold">{stats?.total_co2_avoided || 0}kg</span>
             </div>
           </div>

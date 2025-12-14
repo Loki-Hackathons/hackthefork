@@ -113,16 +113,16 @@ export function generateRecommendations(ingredients: Ingredient[], scores: MealS
     if (ingredientNames.some(n => n.includes('beef'))) {
       recommendations.push({
         type: 'substitution',
-        title: 'Remplacer le bœuf',
-        description: 'Essaie du seitan ou du tempeh pour un score végétal +50',
+        title: 'Replace beef',
+        description: 'Try seitan or tempeh for a +50 plant-based score',
         impact: { vegetal: 50, carbon: 40 }
       });
     }
     if (ingredientNames.some(n => n.includes('chicken'))) {
       recommendations.push({
         type: 'substitution',
-        title: 'Remplacer le poulet',
-        description: 'Utilise du tofu mariné pour un goût similaire',
+        title: 'Replace chicken',
+        description: 'Use marinated tofu for a similar taste',
         impact: { vegetal: 30, carbon: 20 }
       });
     }
@@ -131,8 +131,8 @@ export function generateRecommendations(ingredients: Ingredient[], scores: MealS
   if (scores.carbon < 60) {
     recommendations.push({
       type: 'tip',
-      title: 'Réduire l\'empreinte carbone',
-      description: 'Privilégie les légumineuses et céréales locales',
+      title: 'Reduce carbon footprint',
+      description: 'Prioritize local legumes and grains',
       impact: { carbon: 25 }
     });
   }
@@ -140,8 +140,8 @@ export function generateRecommendations(ingredients: Ingredient[], scores: MealS
   if (scores.healthy < 60) {
     recommendations.push({
       type: 'improvement',
-      title: 'Ajouter des légumes',
-      description: 'Une portion de légumes verts améliore ton score santé',
+        title: 'Add vegetables',
+        description: 'A portion of green vegetables improves your health score',
       impact: { healthy: 20 }
     });
   }
@@ -293,7 +293,7 @@ export async function createPost(
     formData.append('image', imageFile);
     formData.append('user_id', userId);
     
-    // Ajouter le feedback si fourni
+    // Add feedback if provided
     if (feedback) {
       if (feedback.rating !== null) {
         formData.append('rating', feedback.rating.toString());

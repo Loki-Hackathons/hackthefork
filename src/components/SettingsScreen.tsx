@@ -68,7 +68,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-white text-2xl font-bold">Paramètres</h2>
+          <h2 className="text-white text-2xl font-bold">Settings</h2>
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -79,7 +79,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
 
         {/* Name Section */}
         <div className="mb-6">
-          <label className="text-white/70 text-sm mb-2 block">Ton nom</label>
+          <label className="text-white/70 text-sm mb-2 block">Your name</label>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
               <User className="w-6 h-6 text-white" />
@@ -93,7 +93,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                   handleSave();
                 }
               }}
-              placeholder="Ton prénom"
+              placeholder="Your first name"
               className="flex-1 px-4 py-3 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
@@ -109,12 +109,12 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
         >
           {saved ? (
             <>
-              <span>✓ Sauvegardé</span>
+              <span>✓ Saved</span>
             </>
           ) : (
             <>
               <Save className="w-5 h-5" />
-              <span>Sauvegarder</span>
+              <span>Save</span>
             </>
           )}
         </motion.button>

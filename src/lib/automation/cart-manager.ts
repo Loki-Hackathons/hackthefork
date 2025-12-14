@@ -25,83 +25,83 @@ export class CartManager {
         const searchStart = Date.now();
         console.log(`   🔍 [${Date.now() - startTime}ms] Recherche (tentative ${attempt}/3)...`);
         await this.searchProduct(productName);
-        console.log(`   ⏱️  [${Date.now() - searchStart}ms] Recherche lancée`);
+        console.log(`   ⏱️  [${Date.now() - searchStart}ms] Search launched`);
         
-        // 2. Attendre les résultats SANS timeout fixe
-        console.log(`   ⏳ [${Date.now() - startTime}ms] Attente résultats...`);
+        // 2. Wait for results WITHOUT fixed timeout
+        console.log(`   ⏳ [${Date.now() - startTime}ms] Waiting for results...`);
         await this.popupHandler.waitForLoadingToFinish();
-        console.log(`   ✅ [${Date.now() - startTime}ms] Chargement terminé`);
+        console.log(`   ✅ [${Date.now() - startTime}ms] Loading finished`);
         
-        // 3. Vérification rapide des résultats
+        // 3. Quick results check
         const noResults = await this.page.locator(SELECTORS.NO_RESULTS_MESSAGE).isVisible({ timeout: 1000 });
         if (noResults) {
-          console.log(`   ❌ Aucun résultat trouvé`);
+          console.log(`   ❌ No results found`);
           return {
             success: false,
             productName,
-            message: 'Aucun résultat trouvé',
+            message: 'No results found',
             attempts: attempt
           };
         }
         
-        // 4. Chercher et cliquer sur le bouton "Ajouter" IMMÉDIATEMENT
-        console.log(`   🎯 [${Date.now() - startTime}ms] Recherche du bouton "Ajouter"...`);
+        // 4. Find and click the "Add" button IMMEDIATELY
+        console.log(`   🎯 [${Date.now() - startTime}ms] Looking for "Add" button...`);
         const addButton = await this.findAddToCartButton();
         
         if (!addButton) {
-          console.log(`   ⚠️  [${Date.now() - startTime}ms] Bouton non trouvé, retry...`);
+          console.log(`   ⚠️  [${Date.now() - startTime}ms] Button not found, retry...`);
           await this.page.waitForTimeout(CONFIG.RETRY_DELAY);
           continue;
         }
         
-        console.log(`   📍 [${Date.now() - startTime}ms] Bouton trouvé !`);
+        console.log(`   📍 [${Date.now() - startTime}ms] Button found!`);
         
-        // Récupérer le texte du bouton pour debug
+        // Get button text for debug
         const buttonText = await addButton.textContent();
-        console.log(`   📝 [${Date.now() - startTime}ms] Texte du bouton: "${buttonText}"`);
+        console.log(`   📝 [${Date.now() - startTime}ms] Button text: "${buttonText}"`);
         
-        // Récupérer le compteur du panier AVANT le clic
+        // Get cart count BEFORE click
         const cartCountBefore = await this.getCartCount();
-        console.log(`   🛒 [${Date.now() - startTime}ms] Panier avant: ${cartCountBefore}`);
+        console.log(`   🛒 [${Date.now() - startTime}ms] Cart before: ${cartCountBefore}`);
         
-        // 5. Cliquer et attendre que l'ajout soit effectif
+        // 5. Click and wait for add to be effective
         await addButton.scrollIntoViewIfNeeded();
         const clickStart = Date.now();
         await addButton.click();
-        console.log(`   👆 [${Date.now() - clickStart}ms] Clic effectué`);
+        console.log(`   👆 [${Date.now() - clickStart}ms] Click performed`);
         
-        // IMPORTANT : Attendre que l'ajout soit confirmé
-        console.log(`   ⏳ [${Date.now() - startTime}ms] Attente confirmation ajout...`);
+        // IMPORTANT: Wait for add to be confirmed
+        console.log(`   ⏳ [${Date.now() - startTime}ms] Waiting for add confirmation...`);
         
-        // Attendre soit :
-        // 1. Le compteur du panier change
-        // 2. Un message de confirmation apparaît
-        // 3. Le bouton devient disabled (indique que l'ajout est en cours/terminé)
+        // Wait for either:
+        // 1. Cart count changes
+        // 2. A confirmation message appears
+        // 3. Button becomes disabled (indicates add is in progress/finished)
         let confirmed = false;
         for (let waitAttempt = 0; waitAttempt < 10; waitAttempt++) {
           await this.page.waitForTimeout(200);
           
-          // Vérifier si le compteur a changé
+          // Check if cart count changed
           const cartCountAfter = await this.getCartCount();
           if (cartCountAfter !== cartCountBefore) {
-            console.log(`   ✅ [${Date.now() - startTime}ms] Panier mis à jour: ${cartCountBefore} → ${cartCountAfter}`);
+            console.log(`   ✅ [${Date.now() - startTime}ms] Cart updated: ${cartCountBefore} → ${cartCountAfter}`);
             confirmed = true;
             break;
           }
           
-          // Vérifier si un message de confirmation apparaît
+          // Check if a confirmation message appears
           const confirmation = await this.page.locator(SELECTORS.CONFIRMATION_POPUP).isVisible({ timeout: 100 });
           if (confirmation) {
-            console.log(`   ✅ [${Date.now() - startTime}ms] Message de confirmation détecté`);
+            console.log(`   ✅ [${Date.now() - startTime}ms] Confirmation message detected`);
             confirmed = true;
             break;
           }
           
-          // Vérifier si le bouton est maintenant disabled (ajout en cours)
+          // Check if button is now disabled (add in progress)
           const isDisabled = await addButton.isDisabled({ timeout: 100 }).catch(() => false);
           if (isDisabled) {
-            console.log(`   ⏳ [${Date.now() - startTime}ms] Bouton désactivé (ajout en cours)`);
-            // Attendre encore un peu pour que l'ajout se termine
+            console.log(`   ⏳ [${Date.now() - startTime}ms] Button disabled (add in progress)`);
+            // Wait a bit more for add to finish
             await this.page.waitForTimeout(500);
             confirmed = true;
             break;
@@ -109,10 +109,10 @@ export class CartManager {
         }
         
         if (!confirmed) {
-          console.log(`   ⚠️  [${Date.now() - startTime}ms] Aucune confirmation détectée après 2s`);
+          console.log(`   ⚠️  [${Date.now() - startTime}ms] No confirmation detected after 2s`);
         }
         
-        // 6. Gérer les popups
+        // 6. Handle popups
         console.log(`   🔄 [${Date.now() - startTime}ms] Gestion popups...`);
         await this.popupHandler.closeAllPopups();
         

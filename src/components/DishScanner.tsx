@@ -30,7 +30,7 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
         setResult(data);
       } catch (error) {
         console.error("Error processing dish:", error);
-        alert("Échec de l'analyse. Essaye avec une photo plus claire.");
+        alert("Analysis failed. Try with a clearer photo.");
       } finally {
         setIsLoading(false);
       }
@@ -64,8 +64,8 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     />
-                    <p className="text-white text-xl font-medium">Analyse en cours...</p>
-                    <p className="text-white/60 text-sm mt-2">Détection des ingrédients avec IA</p>
+                    <p className="text-white text-xl font-medium">Analyzing...</p>
+                    <p className="text-white/60 text-sm mt-2">Detecting ingredients with AI</p>
                   </>
                 ) : (
                   <>
@@ -75,8 +75,8 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
                     >
                       <Camera className="w-20 h-20 mb-4 text-purple-400" />
                     </motion.div>
-                    <p className="text-white text-xl font-semibold mb-2">Importe une photo</p>
-                    <p className="text-white/60 text-sm">de ton plat pour obtenir des recommandations</p>
+                    <p className="text-white text-xl font-semibold mb-2">Import a photo</p>
+                    <p className="text-white/60 text-sm">of your dish to get recommendations</p>
                   </>
                 )}
               </div>
@@ -101,7 +101,7 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h2 className="text-white text-3xl font-bold mb-2">{result.dishName}</h2>
-                  <p className="text-white/60 text-sm">{result.products.length} produit{result.products.length > 1 ? 's' : ''} recommandé{result.products.length > 1 ? 's' : ''}</p>
+                  <p className="text-white/60 text-sm">{result.products.length} product{result.products.length > 1 ? 's' : ''} recommended</p>
                 </div>
                 <motion.div
                   className={`${getScoreColor(result.totalScore)} rounded-2xl px-4 py-3 shadow-lg`}
@@ -127,7 +127,7 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
                   transition={{ delay: 0.2 }}
                 >
                   <Sparkles className="w-5 h-5 text-emerald-400" />
-                  <p className="text-emerald-400 text-sm font-medium">Plat innovant et éco-responsable !</p>
+                  <p className="text-emerald-400 text-sm font-medium">Innovative and eco-friendly dish!</p>
                 </motion.div>
               )}
             </div>
@@ -186,7 +186,7 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
                   whileTap={{ scale: 0.98 }}
                 >
                   <ShoppingCart size={20} />
-                  Voir les alternatives Carrefour
+                  View Carrefour alternatives
                 </motion.button>
               )}
               
@@ -195,7 +195,7 @@ export const DishScanner = ({ onShop }: DishScannerProps) => {
                 className="w-full bg-white/10 text-white font-medium py-3 rounded-2xl hover:bg-white/20 transition border border-white/20"
                 whileTap={{ scale: 0.98 }}
               >
-                Scanner un autre plat
+                Scan another dish
               </motion.button>
             </div>
           </motion.div>
