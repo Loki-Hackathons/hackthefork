@@ -271,6 +271,70 @@ export async function POST(request: NextRequest) {
       if (ingredientsError) throw ingredientsError;
     }
 
+    // Automatically recalculate scores based on Open Food Facts data
+    // This ensures all posts have consistent OFF-based scores, not AI estimates
+    try {
+      console.log(`🔄 Auto-recalculating scores for new post ${post.id}...`);
+      const { calculateMeanScores } = await import('@/lib/off-scoring');
+      
+      // Search OFF for each ingredient
+      const searchPromises = detectedIngredients.map(async (ing) => {
+        try {
+          // Use deterministic sorting: unique_scans_n ensures consistent results
+          const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(ing.name)}&search_simple=1&action=process&json=1&page_size=1&sort_by=unique_scans_n&fields=product_name,brands,image_url,nutriscore_score,nutriscore_grade,ecoscore_grade,ecoscore_score,nova_group`;
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const response = await fetch(searchUrl, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) return null;
+          
+          const data = await response.json();
+          if (!data.products || data.products.length === 0) return null;
+          
+          return data.products[0];
+        } catch (error) {
+          console.warn(`Failed to search OFF for "${ing.name}":`, error);
+          return null;
+        }
+      });
+
+      const searchResults = await Promise.all(searchPromises);
+      const validProducts = searchResults.filter(p => p !== null);
+
+      if (validProducts.length > 0) {
+        // Calculate real scores from OFF data
+        const realScores = calculateMeanScores(validProducts);
+        
+        // Update post with real scores
+        const { error: updateError } = await supabase
+          .from('posts')
+          .update({
+            vegetal_score: realScores.vegetal_score,
+            health_score: realScores.health_score,
+            carbon_score: realScores.carbon_score
+          })
+          .eq('id', post.id);
+
+        if (updateError) {
+          console.error('Error updating post with real scores:', updateError);
+        } else {
+          console.log(`✅ Updated post ${post.id} with OFF-based scores:`, realScores);
+          // Update the post object to return real scores
+          post.vegetal_score = realScores.vegetal_score;
+          post.health_score = realScores.health_score;
+          post.carbon_score = realScores.carbon_score;
+        }
+      } else {
+        console.warn(`⚠️ No OFF products found for post ${post.id}, keeping AI-estimated scores`);
+      }
+    } catch (recalcError) {
+      // Don't fail post creation if recalculation fails
+      console.error('Error auto-recalculating scores (non-fatal):', recalcError);
+    }
+
     return NextResponse.json({
       post: {
         ...post,

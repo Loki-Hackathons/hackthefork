@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { calculateProductScore, type OFFProduct } from '@/scoring';
+import { calculateMeanScores, type OFFProduct } from '@/lib/off-scoring';
 
 // Search Open Food Facts for a single ingredient
 async function searchOFFForIngredient(ingredientName: string): Promise<OFFProduct | null> {
   try {
     console.log(`🔍 Searching OFF for ingredient: "${ingredientName}"`);
     
-    // Build search URL with popularity sorting
-    const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(ingredientName)}&search_simple=1&action=process&json=1&page_size=5&sort_by=unique_scans_n&fields=product_name,brands,image_url,nutriscore_score,nutriscore_grade,ecoscore_grade,ecoscore_score,nova_group`;
+    // Build search URL with popularity sorting (deterministic: unique_scans_n ensures consistent results)
+    // Using page_size=1 and sort_by=unique_scans_n ensures we always get the same most popular product
+    const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(ingredientName)}&search_simple=1&action=process&json=1&page_size=1&sort_by=unique_scans_n&fields=product_name,brands,image_url,nutriscore_score,nutriscore_grade,ecoscore_grade,ecoscore_score,nova_group`;
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per search
@@ -39,84 +40,6 @@ async function searchOFFForIngredient(ingredientName: string): Promise<OFFProduc
   }
 }
 
-// Calculate scores breakdown (vegetal, health, carbon) from OFF products
-function calculateScoresBreakdown(products: OFFProduct[]): {
-  vegetal_score: number;
-  health_score: number;
-  carbon_score: number;
-  overall_score: number;
-} {
-  if (!products || products.length === 0) {
-    return {
-      vegetal_score: 0,
-      health_score: 0,
-      carbon_score: 0,
-      overall_score: 0
-    };
-  }
-
-  let totalVegetalScore = 0;
-  let totalHealthScore = 0;
-  let totalCarbonScore = 0;
-
-  for (const product of products) {
-    // Vegetal Score: Based on NOVA group (less processed = higher score)
-    let vegetalScore = 50;
-    if (product.nova_group !== undefined) {
-      vegetalScore = ((5 - product.nova_group) / 4) * 100; // 1->100, 4->25
-    }
-
-    // Health Score: Based on Nutri-Score
-    let healthScore = 50;
-    if (product.nutriscore_score !== undefined) {
-      // Invert nutriscore: -15 (best) = 100, 40 (worst) = 0
-      healthScore = Math.max(0, Math.min(100, 100 - ((product.nutriscore_score + 15) * 100 / 55)));
-    }
-
-    // Carbon Score: Based on Eco-Score
-    let carbonScore = 50;
-    if (product.ecoscore_grade) {
-      const ecoScoreMap: { [key: string]: number } = {
-        'a': 100,
-        'b': 80,
-        'c': 60,
-        'd': 40,
-        'e': 20
-      };
-      carbonScore = ecoScoreMap[product.ecoscore_grade.toLowerCase()] || 50;
-    } else if (product.ecoscore_score !== undefined) {
-      carbonScore = product.ecoscore_score;
-    }
-
-    // Bonus for organic products
-    const productName = (product.product_name || '').toLowerCase();
-    const brands = (product.brands || '').toLowerCase();
-    if (productName.includes('bio') || productName.includes('organic') || 
-        brands.includes('bio') || brands.includes('organic')) {
-      vegetalScore = Math.min(100, vegetalScore + 10);
-      healthScore = Math.min(100, healthScore + 5);
-      carbonScore = Math.min(100, carbonScore + 10);
-    }
-
-    totalVegetalScore += vegetalScore;
-    totalHealthScore += healthScore;
-    totalCarbonScore += carbonScore;
-  }
-
-  // Calculate arithmetic means
-  const count = products.length;
-  const vegetalMean = Math.round(totalVegetalScore / count);
-  const healthMean = Math.round(totalHealthScore / count);
-  const carbonMean = Math.round(totalCarbonScore / count);
-  const overallMean = Math.round((vegetalMean + healthMean + carbonMean) / 3);
-
-  return {
-    vegetal_score: vegetalMean,
-    health_score: healthMean,
-    carbon_score: carbonMean,
-    overall_score: overallMean
-  };
-}
 
 // GET /api/recalculate-scores?post_id=xxx
 export async function GET(request: NextRequest) {
@@ -175,14 +98,15 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Calculate scores using the breakdown function
-    const scores = calculateScoresBreakdown(validProducts);
+    // Calculate scores using arithmetic mean from OFF data
+    const scores = calculateMeanScores(validProducts);
+    const overallScore = Math.round((scores.vegetal_score + scores.health_score + scores.carbon_score) / 3);
 
-    console.log(`\n📊 Calculated Scores:`);
-    console.log(`   - Vegetal: ${scores.vegetal_score}/100`);
-    console.log(`   - Health: ${scores.health_score}/100`);
-    console.log(`   - Carbon: ${scores.carbon_score}/100`);
-    console.log(`   - Overall: ${scores.overall_score}/100`);
+    console.log(`\n📊 Calculated Scores (Arithmetic Mean):`);
+    console.log(`   - Nutriscore (vegetal): ${scores.vegetal_score}/100`);
+    console.log(`   - Additive (health): ${scores.health_score}/100`);
+    console.log(`   - Label (carbon): ${scores.carbon_score}/100`);
+    console.log(`   - Overall: ${overallScore}/100`);
 
     // Update the post with new scores
     const { error: updateError } = await supabase
@@ -212,7 +136,7 @@ export async function GET(request: NextRequest) {
         vegetal: scores.vegetal_score,
         health: scores.health_score,
         carbon: scores.carbon_score,
-        overall: scores.overall_score
+        overall: overallScore
       },
       products: validProducts.map(p => ({
         name: p.product_name,
