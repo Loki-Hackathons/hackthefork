@@ -67,6 +67,8 @@ interface ShopScreenProps {
 export function ShopScreen({ onNavigate }: ShopScreenProps) {
   const [ingredients, setIngredients] = useState(mockRecipe.ingredients);
   const [showSwap, setShowSwap] = useState<number | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderMessage, setOrderMessage] = useState<string | null>(null);
 
   const toggleIngredient = (id: number) => {
     setIngredients(ingredients.map(ing => 
@@ -89,6 +91,42 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
       return ing;
     }));
     setShowSwap(null);
+  };
+
+  const handleOrder = async () => {
+    setOrderLoading(true);
+    setOrderMessage(null);
+    
+    try {
+      console.log('🛒 Démarrage de l\'automatisation Auchan...');
+      
+      const response = await fetch('/api/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          dishId: 'burger-vege' // Peut être remplacé par un ID dynamique
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrderMessage('✅ Automatisation démarrée ! Le navigateur va s\'ouvrir...');
+        console.log('✅ Réponse du serveur:', data);
+        
+        // Effacer le message après 5 secondes
+        setTimeout(() => setOrderMessage(null), 5000);
+      } else {
+        setOrderMessage('❌ Erreur: ' + (data.message || 'Impossible de démarrer l\'automatisation'));
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'appel API:', error);
+      setOrderMessage('❌ Erreur: Impossible de démarrer l\'automatisation. Vérifiez que la session est sauvegardée.');
+    } finally {
+      setOrderLoading(false);
+    }
   };
 
   const totalPrice = ingredients
@@ -276,13 +314,33 @@ export function ShopScreen({ onNavigate }: ShopScreenProps) {
           </div>
         </div>
 
+        {/* Order Message */}
+        {orderMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={`mb-4 p-4 rounded-xl ${
+              orderMessage.includes('✅') 
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+            }`}
+          >
+            {orderMessage}
+          </motion.div>
+        )}
+
         {/* CTA Button */}
-        <button className="w-full py-5 bg-white text-black rounded-2xl flex items-center justify-between px-6 shadow-xl active:scale-95 transition-transform">
+        <button 
+          onClick={handleOrder}
+          disabled={orderLoading}
+          className="w-full py-5 bg-white text-black rounded-2xl flex items-center justify-between px-6 shadow-xl active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-6 h-6" />
             <div className="text-left">
-              <div className="text-sm">Order</div>
-              <div className="text-xs opacity-60">Carrefour Drive</div>
+              <div className="text-sm">{orderLoading ? 'Loading...' : 'Order'}</div>
+              <div className="text-xs opacity-60">Auchan Drive</div>
             </div>
           </div>
           <div className="text-3xl">
