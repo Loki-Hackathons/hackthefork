@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, Scan, X, Sparkles, Check, Image } from 'lucide-react';
 import type { Screen } from './MainApp';
-import { analyzeMeal, type MealAnalysisResult } from '@/services/api';
+import { analyzeMeal, createPost, type MealAnalysisResult } from '@/services/api';
 import { DishScanner } from './DishScanner';
 import { processDishPhoto, type RecommendedDish } from '@/services/recipeEngine';
 
@@ -39,10 +39,14 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
     setMode('scan');
   };
 
-  const handlePost = () => {
-    setTimeout(() => {
+  const handlePost = async (imageFile: File) => {
+    try {
+      await createPost(imageFile);
       onNavigate('feed');
-    }, 500);
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      alert('Failed to create post. Please try again.');
+    }
   };
 
   const handleReset = () => {
@@ -77,7 +81,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
             key="post"
             imageFile={capturedFile}
             imageUrl={capturedImage}
-            onPost={handlePost}
+            onPost={() => handlePost(capturedFile)}
             onCancel={handleReset}
           />
         )}
@@ -220,7 +224,7 @@ function ScanViewWithDishScanner({ onBack, onShop }: ScanViewWithDishScannerProp
 interface PostViewProps {
   imageFile: File;
   imageUrl: string;
-  onPost: () => void;
+  onPost: () => Promise<void>;
   onCancel: () => void;
 }
 
@@ -232,6 +236,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
   const [currentImageUrl, setCurrentImageUrl] = useState<string>(imageUrl);
   const [currentImageFile, setCurrentImageFile] = useState<File>(imageFile);
   const [error, setError] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -303,24 +308,51 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
 
   return (
     <motion.div
-      className="h-full flex flex-col bg-black overflow-y-auto relative"
+      className="h-full flex flex-col bg-black relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="pt-12 pb-4 px-6 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/10">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 pt-12 pb-4 px-6 flex items-center justify-between z-30 bg-gradient-to-b from-black/80 to-transparent">
         <button 
           onClick={onCancel} 
           className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors"
         >
           <X className="w-6 h-6 text-white" />
         </button>
-        <h2 className="text-white text-xl font-semibold">Nouveau post</h2>
+        <h2 className="text-white text-xl font-semibold drop-shadow-lg">Nouveau post</h2>
         <div className="w-12" />
       </div>
 
+      {/* Full screen image */}
+      <div className="absolute inset-0">
+        <img src={currentImageUrl} alt="Captured dish" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+
+      {/* Hidden gallery input */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGallerySelect}
+      />
+      
+      {/* Gallery button - bottom right */}
+      <motion.button
+        onClick={handleGalleryButtonClick}
+        disabled={isProcessingFoodFacts || isCalculating}
+        className="absolute bottom-32 right-6 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 hover:bg-white/30 transition-colors z-20 disabled:opacity-50"
+        whileTap={{ scale: 0.9 }}
+      >
+        <Image className="w-6 h-6 text-white" />
+      </motion.button>
+
+      {/* Small Score Badge - Top Left */}
       {!isCalculating && analysisResult && (
-        <div className="absolute left-6 top-40 z-20">
+        <div className="absolute left-6 top-28 z-20">
           {(() => {
             const avgScore = Math.round(
               (analysisResult.scores.vegetal + analysisResult.scores.healthy + analysisResult.scores.carbon) / 3
@@ -329,10 +361,9 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
             
             return (
               <motion.div
-                className={`${colorClass} rounded-xl px-3 py-2 shadow-xl backdrop-blur-sm border border-white/20`}
+                className={`${colorClass} rounded-xl px-3 py-2 shadow-xl backdrop-blur-sm border border-white/30`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.05 }}
               >
                 <div className="flex flex-col items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -347,37 +378,96 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
-      <div className="aspect-square w-full mb-6 relative group">
-        <img src={currentImageUrl} alt="Captured dish" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/40" />
-        
-        <div className="absolute bottom-6 right-6">
-          <motion.button
-            onClick={handleGalleryButtonClick}
-            disabled={isProcessingFoodFacts || isCalculating}
-            className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-2xl border-2 border-emerald-500/50 backdrop-blur-md"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Image className="w-6 h-6" />
-            <span className="font-bold text-lg">Choisir une photo</span>
-          </motion.button>
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleGallerySelect}
-          />
-        </div>
-      </div>
+      {/* Compact Analysis Complete Badge */}
+      {!isCalculating && analysisResult && (
+        <motion.div
+          className="absolute left-6 right-6 top-48 z-20"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="bg-emerald-500/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/30 inline-flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <Check className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white text-sm font-semibold">Analyse complète</span>
+          </div>
+        </motion.div>
+      )}
 
-      {error && (
-        <div className="px-6 mb-6">
+      {/* Loading State */}
+      {isCalculating && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-sm">
           <motion.div
-            className="bg-red-600/20 border border-red-500/50 rounded-3xl p-6 text-center backdrop-blur-md"
+            className="bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center border border-white/20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <motion.div
+              className="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-4"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <p className="text-white text-lg font-semibold mb-1">
+              Calcul du score écolo...
+            </p>
+            <p className="text-white/50 text-sm">
+              Analyse en cours
+            </p>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Recommendations - Bottom overlay */}
+      {!isCalculating && analysisResult && analysisResult.recommendations.length > 0 && (
+        <motion.div
+          className="absolute bottom-32 left-6 right-6 z-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="bg-purple-600/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-purple-400/40">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-white" />
+              <h3 className="text-white text-base font-bold">Suggestions</h3>
+            </div>
+            <div className="space-y-2">
+              {analysisResult.recommendations.slice(0, 2).map((rec, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10"
+                >
+                  <div className="text-white font-semibold text-sm mb-1">{rec.title}</div>
+                  <div className="text-white/90 text-xs">{rec.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Food Facts Badge - if available */}
+      {!isCalculating && foodFactsResult && !error && (
+        <motion.div
+          className="absolute top-64 left-6 right-6 z-20"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="bg-purple-500/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/30 inline-flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-white" />
+            <span className="text-white text-sm font-semibold">
+              Score Open Food Facts: {foodFactsResult.totalScore}/100
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/60 backdrop-blur-sm">
+          <motion.div
+            className="bg-red-600/20 border border-red-500/50 rounded-3xl p-6 text-center backdrop-blur-md mx-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -385,7 +475,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
             <p className="text-white text-lg font-semibold mb-2">
               Erreur d'analyse
             </p>
-            <p className="text-white/80 text-sm">
+            <p className="text-white/80 text-sm mb-4">
               {error}
             </p>
             <motion.button
@@ -393,7 +483,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
                 setError(null);
                 handleGalleryButtonClick();
               }}
-              className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors"
               whileTap={{ scale: 0.95 }}
             >
               Réessayer avec une autre photo
@@ -402,198 +492,23 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         </div>
       )}
 
-      {foodFactsResult && !error && (
-        <div className="px-6 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-purple-600 rounded-3xl p-6 shadow-xl border border-purple-400/30"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <h3 className="text-white text-2xl font-bold mb-2 flex items-center gap-2">
-                  <Sparkles className="w-6 h-6" />
-                  {foodFactsResult.dishName}
-                </h3>
-                <p className="text-white/80 text-sm">{foodFactsResult.products.length} produit{foodFactsResult.products.length > 1 ? 's' : ''} recommandé{foodFactsResult.products.length > 1 ? 's' : ''}</p>
-              </div>
-              <motion.div
-                className={`${getScoreColor(foodFactsResult.totalScore)} rounded-2xl px-4 py-3 shadow-lg`}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                <div className="flex flex-col items-center gap-1">
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-white text-2xl font-bold">{foodFactsResult.totalScore}</span>
-                    <span className="text-white/80 text-xs">/100</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {foodFactsResult.isInnovation && (
-              <motion.div
-                className="bg-emerald-700/30 border border-emerald-500/50 rounded-2xl p-3 flex items-center gap-2 mb-4"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <p className="text-emerald-400 text-sm font-medium">Plat innovant et éco-responsable !</p>
-              </motion.div>
-            )}
-
-            <div className="space-y-3 mt-4">
-              <h4 className="text-white text-lg font-semibold">Produits recommandés (Open Food Facts)</h4>
-              {foodFactsResult.products.map((prod, idx) => (
-                <motion.div
-                  key={idx}
-                  className="flex items-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * idx }}
-                >
-                  {prod.image ? (
-                    <img 
-                      src={prod.image} 
-                      alt={prod.name} 
-                      className="w-16 h-16 rounded-xl object-cover mr-4 border border-white/10" 
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center mr-4">
-                      <Camera className="w-8 h-8 text-white/40" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-lg truncate">{prod.name}</p>
-                    <p className="text-white/60 text-sm truncate">{prod.brand}</p>
-                    {prod.ecoScore && prod.ecoScore !== 'unknown' && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-white/50 text-xs">Eco-Score:</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          prod.ecoScore === 'a' ? 'bg-emerald-700 text-white' :
-                          prod.ecoScore === 'b' ? 'bg-green-600 text-white' :
-                          prod.ecoScore === 'c' ? 'bg-yellow-500 text-black' :
-                          prod.ecoScore === 'd' ? 'bg-orange-500 text-white' :
-                          'bg-red-500 text-white'
-                        }`}>
-                          {prod.ecoScore.toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {isProcessingFoodFacts && !error && (
-        <div className="px-6 mb-6">
-          <motion.div
-            className="bg-white/5 backdrop-blur-md rounded-3xl p-8 text-center border border-white/10"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <motion.div
-              className="w-24 h-24 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-6"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
-            <p className="text-white text-xl font-semibold mb-2">
-              Analyse avec Open Food Facts...
-            </p>
-            <p className="text-white/50 text-sm">
-              Recherche des meilleurs produits et calcul du score
-            </p>
-          </motion.div>
-        </div>
-      )}
-
-      <div className="px-6 flex-1 pb-6">
-        <AnimatePresence mode="wait">
-          {isCalculating ? (
-            <motion.div
-              key="calculating"
-              className="bg-white/5 backdrop-blur-md rounded-3xl p-8 text-center border border-white/10"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="w-24 h-24 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-6"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              <p className="text-white text-xl font-semibold mb-2">
-                Calcul de ton score écolo...
-              </p>
-              <p className="text-white/50 text-sm">
-                Recherche dans tes achats Carrefour
-              </p>
-            </motion.div>
-          ) : analysisResult ? (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className="space-y-6"
-            >
-              {analysisResult.recommendations.length > 0 && (
-                <div className="bg-purple-600 rounded-3xl p-6 shadow-xl border border-purple-400/30">
-                  <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
-                    <Sparkles className="w-6 h-6" />
-                    Suggestions d'amélioration
-                  </h3>
-                  <div className="space-y-3">
-                    {analysisResult.recommendations.map((rec, idx) => (
-                      <motion.div
-                        key={idx}
-                        className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + idx * 0.1 }}
-                      >
-                        <div className="text-white font-semibold mb-1">{rec.title}</div>
-                        <div className="text-white/90 text-sm">{rec.description}</div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <motion.div
-                className="bg-emerald-500 rounded-3xl p-6 shadow-xl border border-emerald-400/30"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/40">
-                    <Check className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-white text-lg font-semibold">Analyse complète</div>
-                    <div className="text-white/80 text-sm">Impact carbone vérifié</div>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-
-      <div className="p-6 pt-0 sticky bottom-0 bg-black/95 backdrop-blur-sm">
+      {/* Post button */}
+      <div className="absolute bottom-0 left-0 right-0 p-6 z-30 bg-gradient-to-t from-black/90 to-transparent">
         <motion.button
-          onClick={onPost}
-          disabled={isCalculating || !analysisResult}
+          onClick={async () => {
+            setIsPosting(true);
+            try {
+              await onPost();
+            } catch (error) {
+              console.error('Error posting:', error);
+              setIsPosting(false);
+            }
+          }}
+          disabled={isCalculating || !analysisResult || isPosting}
           className="w-full py-5 bg-white text-black rounded-2xl text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-2xl"
           whileTap={{ scale: 0.95 }}
         >
-          Partager avec ta squad
+          {isPosting ? 'Publication...' : 'Partager avec ta squad'}
         </motion.button>
       </div>
     </motion.div>
