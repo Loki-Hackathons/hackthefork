@@ -22,12 +22,24 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
     { value: 4, label: 'Very Active', description: '2x per day or intense' },
   ];
 
-  const handleSubmit = async () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showError, setShowError] = useState(false);
+
+  const handleSubmit = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (isSubmitting) return; // Prevent double submission
+    
     if (!weight || parseFloat(weight) <= 0) {
-      alert('Please enter a valid weight');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000); // Hide after 3 seconds
       return;
     }
 
+    setIsSubmitting(true);
     const userId = getUserId();
     
     try {
@@ -52,6 +64,7 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       alert('Failed to save preferences. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
@@ -65,11 +78,12 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
 
   return (
     <motion.div
-      className="h-full w-full bg-gradient-to-br from-emerald-950 via-black to-black flex flex-col items-center justify-center px-6 overflow-y-auto py-12"
+      className="h-full w-full bg-gradient-to-br from-emerald-950 via-black to-black flex flex-col items-center justify-center px-6 overflow-y-auto py-12 relative z-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      style={{ pointerEvents: 'auto' }}
     >
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-8 mt-8">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
@@ -120,9 +134,10 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
               max="100"
               value={dietaryPreference}
               onChange={(e) => setDietaryPreference(parseInt(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 relative z-10"
               style={{
-                background: `linear-gradient(to right, #10b981 0%, #10b981 ${dietaryPreference}%, rgba(255,255,255,0.1) ${dietaryPreference}%, rgba(255,255,255,0.1) 100%)`
+                background: `linear-gradient(to right, #10b981 0%, #10b981 ${dietaryPreference}%, rgba(255,255,255,0.1) ${dietaryPreference}%, rgba(255,255,255,0.1) 100%)`,
+                pointerEvents: 'auto'
               }}
             />
 
@@ -158,7 +173,8 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Enter your weight in kg"
-              className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-xl text-white text-lg placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-xl text-white text-lg placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-colors relative z-10"
+              style={{ pointerEvents: 'auto' }}
               min="1"
               max="500"
               step="0.1"
@@ -191,11 +207,12 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
               <button
                 key={option.value}
                 onClick={() => setActivityLevel(option.value)}
-                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all relative z-10 ${
                   activityLevel === option.value
                     ? 'bg-emerald-500/20 border-emerald-500'
                     : 'bg-white/5 border-white/10 hover:border-white/20'
                 }`}
+                style={{ pointerEvents: 'auto' }}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -214,18 +231,34 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
         </motion.div>
 
         {/* Submit Button */}
-        <motion.button
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          onClick={handleSubmit}
-          disabled={!weight || parseFloat(weight) <= 0}
-          className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors"
-          whileTap={{ scale: 0.95 }}
+          className="relative z-50"
+          style={{ pointerEvents: 'auto' }}
         >
-          <span>Continue</span>
-          <ArrowRight className="w-5 h-5" />
-        </motion.button>
+          <button
+            onClick={handleSubmit}
+            disabled={!weight || parseFloat(weight) <= 0 || isSubmitting}
+            className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors"
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 100 }}
+          >
+            <span>Continue</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          {showError && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-white/50 text-xs text-center mt-2"
+            >
+              Please enter your weight to continue
+            </motion.p>
+          )}
+        </motion.div>
+        <div className="mb-8" /> {/* Bottom margin spacer */}
       </div>
     </motion.div>
   );

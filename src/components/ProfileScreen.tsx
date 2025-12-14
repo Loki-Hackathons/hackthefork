@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, TrendingUp, Settings, Leaf, Flame, Users, MessageCircle } from 'lucide-react';
+import { Trophy, TrendingUp, Settings, Leaf, Flame, Users } from 'lucide-react';
 import { fetchUserStats, type UserStats } from '@/services/api';
 import { getUserId, getUserName, setUserName, getUserAvatar, getUserAvatarImage, setUserAvatar, setUserAvatarImage } from '@/lib/cookies';
 import { SettingsScreen } from './SettingsScreen';
@@ -237,17 +237,6 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
           >
             <Trophy className="w-5 h-5" />
             Challenges
-          </button>
-          <button 
-            onClick={() => {
-              if (onNavigate) {
-                onNavigate('messages');
-              }
-            }}
-            className="flex-1 py-2.5 bg-white text-black rounded-xl flex items-center justify-center gap-2 font-semibold"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Messages
           </button>
           <button className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
             <Users className="w-5 h-5 text-white" />

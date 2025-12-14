@@ -40,7 +40,7 @@ export function MainApp({ onboardingComplete, setOnboardingComplete }: MainAppPr
   // Show preferences onboarding first if not complete
   if (!preferencesComplete) {
     return (
-      <div className="h-screen w-screen bg-black overflow-hidden">
+      <div className="h-screen w-screen bg-black overflow-hidden relative" style={{ pointerEvents: 'auto' }}>
         <PreferencesOnboarding onComplete={() => setPreferencesComplete(true)} />
       </div>
     );
