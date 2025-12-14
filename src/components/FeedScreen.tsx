@@ -628,7 +628,7 @@ function FeedPost({
       </div>
 
       {/* Bottom content */}
-      <div className="absolute bottom-0 left-0 right-0 pb-8 pl-6 pr-0 z-20">
+      <div className="absolute bottom-0 left-0 right-0 pb-24 pl-6 pr-0 z-20">
         <div className="flex items-end gap-6">
           {/* Left side - Content */}
           <div className="flex-1 pb-1">
@@ -726,7 +726,7 @@ function FeedPost({
       {/* Scroll indicator */}
       {isFirst && (
         <motion.div
-          className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10"
+          className="absolute bottom-48 left-1/2 -translate-x-1/2 z-10"
           animate={{ y: [0, 12, 0], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
