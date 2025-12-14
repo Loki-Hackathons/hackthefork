@@ -570,7 +570,7 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
 
   return (
     <motion.div 
-      className="h-full flex flex-col relative"
+      className="h-full flex flex-col relative overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -579,7 +579,7 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      <div className="relative z-10 flex flex-col h-full p-6">
+      <div className="relative z-10 flex flex-col min-h-full p-6">
         <button 
           onClick={onCancel}
           className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-black/40 transition-colors border border-white/10 mb-4"
@@ -733,10 +733,7 @@ function PostAnalyzedView({ imageFile, imageUrl, analysisData, onShare, onSeeRec
                 <span>Publishing...</span>
               </>
             ) : (
-              <>
-                <Share2 className="w-5 h-5" />
-                <span>Publish</span>
-              </>
+              <span>Publish</span>
             )}
           </motion.button>
         </div>
