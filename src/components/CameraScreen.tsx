@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight } from 'lucide-react';
+import { Camera, Scan, X, Sparkles, Leaf, Apple, Cloud, Check, ArrowRight, ChefHat, Share2 } from 'lucide-react';
 import type { Screen } from './MainApp';
 import { analyzeMeal, type MealAnalysisResult } from '@/services/api';
 
@@ -37,12 +37,12 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
   const handleScan = () => {
     setMode('scan');
     setTimeout(() => {
-      setScannedItems(['Steak de bœuf', 'Pommes de terre', 'Haricots verts']);
+      setScannedItems(['Beef Steak', 'Potatoes', 'Green Beans']);
     }, 1500);
   };
 
   const handlePost = async () => {
-    // Post is already created in PostView component via analyzeMeal
+    // Post is already created in PostAnalysisView component via analyzeMeal
     // Just navigate to feed
     onNavigate('feed');
   };
@@ -77,7 +77,7 @@ export function CameraScreen({ onNavigate }: CameraScreenProps) {
         )}
 
         {mode === 'post' && capturedFile && capturedImage && (
-          <PostView
+          <PostFlow
             key="post"
             imageFile={capturedFile}
             imageUrl={capturedImage}
@@ -126,6 +126,7 @@ function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraVie
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          style={{ borderRadius: '24px' }} // Fallback
         />
 
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none z-10">
@@ -135,26 +136,15 @@ function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraVie
           >
             <Camera className="w-24 h-24 text-white/50 mx-auto mb-6" />
           </motion.div>
-          <p className="text-white/70 text-xl font-medium">Prends ton plat en photo</p>
-          <p className="text-white/40 text-sm mt-2">On calcule ton impact écolo</p>
+          <p className="text-white/70 text-xl font-medium">Snap your meal</p>
+          <p className="text-white/40 text-sm mt-2">We calculate your eco-impact</p>
         </div>
       </div>
 
-      {/* Bottom controls - BeReal style */}
+      {/* Bottom controls */}
       <div className="p-8 bg-black/95 backdrop-blur-lg border-t border-white/10">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          {/* Scan button */}
-          <motion.button
-            onClick={onScan}
-            className="flex flex-col items-center gap-3"
-            whileTap={{ scale: 0.9 }}
-          >
-            <div className="w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg">
-              <Scan className="w-10 h-10 text-white" />
-            </div>
-            <span className="text-purple-400 text-sm font-medium">Scan</span>
-          </motion.button>
-
+        <div className="flex items-center justify-center max-w-md mx-auto">
+          
           {/* Capture button - centered */}
           <motion.button
             onClick={onCapture}
@@ -168,18 +158,6 @@ function CameraView({ onCapture, onScan, fileInputRef, onFileSelect }: CameraVie
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
             </div>
-          </motion.button>
-
-          {/* Gallery button */}
-          <motion.button
-            onClick={onCapture}
-            className="flex flex-col items-center gap-3"
-            whileTap={{ scale: 0.9 }}
-          >
-            <div className="w-20 h-20 rounded-2xl bg-emerald-700 flex items-center justify-center shadow-lg">
-              <Sparkles className="w-10 h-10 text-white" />
-            </div>
-            <span className="text-emerald-400 text-sm font-medium">Galerie</span>
           </motion.button>
 
           <input
@@ -220,9 +198,9 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
           <X className="w-6 h-6 text-white" />
         </button>
         <h2 className="text-white text-4xl font-bold">
-          Scan de ton plat
+          Scan your meal
         </h2>
-        <p className="text-white/60 text-sm mt-2">Détection des ingrédients en cours...</p>
+        <p className="text-white/60 text-sm mt-2">Detecting ingredients...</p>
       </div>
 
       {/* Scanning animation */}
@@ -234,8 +212,8 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
-            <p className="text-white/80 text-xl font-medium">Détection en cours...</p>
-            <p className="text-white/50 text-sm mt-2">Analyse de l'image avec IA</p>
+            <p className="text-white/80 text-xl font-medium">Scanning...</p>
+            <p className="text-white/50 text-sm mt-2">AI image analysis</p>
           </div>
         </div>
       ) : (
@@ -247,7 +225,7 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
           >
             <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 mb-6 border border-white/10">
               <h3 className="text-purple-400 mb-4 text-lg font-semibold">
-                Ingrédients détectés
+                Detected ingredients
               </h3>
               <div className="space-y-3">
                 {scannedItems.map((item, idx) => (
@@ -282,10 +260,10 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
                     <Sparkles className="w-8 h-8 text-white flex-shrink-0 mt-1" />
                     <div className="flex-1">
                       <h3 className="text-white text-2xl font-bold mb-3">
-                        Suggestion IA
+                        AI Suggestion
                       </h3>
                       <p className="text-white/95 text-lg leading-relaxed mb-4">
-                        Remplace le <span className="font-bold">Steak de bœuf</span> par du{' '}
+                        Replace <span className="font-bold">Beef Steak</span> with{' '}
                         <span className="font-bold">Seitan</span>
                       </p>
                       <div className="flex items-center gap-4">
@@ -304,7 +282,7 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Voir l'alternative Carrefour
+                    See Carrefour alternative
                   </motion.button>
                 </motion.div>
               )}
@@ -316,14 +294,146 @@ function ScanView({ scannedItems, onBack, onShop }: ScanViewProps) {
   );
 }
 
-interface PostViewProps {
+interface PostFlowProps {
   imageFile: File;
   imageUrl: string;
   onPost: () => void;
   onCancel: () => void;
 }
 
-function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
+function PostFlow({ imageFile, imageUrl, onPost, onCancel }: PostFlowProps) {
+  const [step, setStep] = useState<'choice' | 'analysis' | 'recipe'>('choice');
+
+  return (
+    <div className="h-full bg-black flex flex-col">
+      {step === 'choice' && (
+        <PostChoiceView
+          imageUrl={imageUrl}
+          onSelectRecipe={() => setStep('recipe')}
+          onSelectPost={() => setStep('analysis')}
+          onCancel={onCancel}
+        />
+      )}
+      
+      {step === 'analysis' && (
+        <PostAnalysisView
+          imageFile={imageFile}
+          imageUrl={imageUrl}
+          onPost={onPost}
+          onCancel={() => setStep('choice')}
+        />
+      )}
+
+      {step === 'recipe' && (
+        <RecipeView
+          imageUrl={imageUrl}
+          onBack={() => setStep('choice')}
+        />
+      )}
+    </div>
+  );
+}
+
+function PostChoiceView({ imageUrl, onSelectRecipe, onSelectPost, onCancel }: {
+  imageUrl: string;
+  onSelectRecipe: () => void;
+  onSelectPost: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <motion.div 
+      className="h-full flex flex-col relative"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <div className="absolute inset-0">
+        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
+      </div>
+
+      <div className="relative z-10 flex flex-col h-full p-6">
+        <button 
+          onClick={onCancel}
+          className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center hover:bg-black/40 transition-colors border border-white/10"
+        >
+          <X className="w-6 h-6 text-white" />
+        </button>
+
+        <div className="flex-1 flex flex-col justify-end gap-3 mb-8">
+          <motion.button
+            onClick={onSelectRecipe}
+            className="w-full p-5 bg-black/20 backdrop-blur-md rounded-2xl border border-white/10 text-left hover:bg-black/30 hover:border-white/20 transition-colors group"
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 group-hover:bg-emerald-500/25 transition-colors">
+                <ChefHat className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white text-lg font-semibold">Get sustainable recipe</h3>
+                <p className="text-white/50 text-xs">AI-powered recommendations</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-white/60 group-hover:translate-x-1 transition-all" />
+            </div>
+          </motion.button>
+
+          <motion.button
+            onClick={onSelectPost}
+            className="w-full p-5 bg-white/85 backdrop-blur-md text-black rounded-2xl text-left hover:bg-white/95 transition-colors group border border-white/20"
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center text-black/70">
+                <Share2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-black text-lg font-semibold">Post to feed</h3>
+                <p className="text-black/50 text-xs">Share with your squad</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-black/30 group-hover:text-black/60 group-hover:translate-x-1 transition-all" />
+            </div>
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function RecipeView({ imageUrl, onBack }: { imageUrl: string; onBack: () => void }) {
+  return (
+    <motion.div 
+      className="h-full flex flex-col bg-black p-6"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <button 
+        onClick={onBack}
+        className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-6 hover:bg-white/20 transition-colors"
+      >
+        <X className="w-6 h-6 text-white" />
+      </button>
+
+      <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <div className="w-32 h-32 rounded-full bg-emerald-900/30 flex items-center justify-center mb-8">
+          <ChefHat className="w-16 h-16 text-emerald-500" />
+        </div>
+        <h2 className="text-white text-3xl font-bold mb-4">Cooking Up...</h2>
+        <p className="text-white/60 text-lg max-w-xs mx-auto">
+          Our AI is learning to create sustainable recipes from your photos. Feature coming soon!
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+interface PostAnalysisViewProps {
+  imageFile: File;
+  imageUrl: string;
+  onPost: () => void;
+  onCancel: () => void;
+}
+
+function PostAnalysisView({ imageFile, imageUrl, onPost, onCancel }: PostAnalysisViewProps) {
   const [isCalculating, setIsCalculating] = useState(true);
   const [analysisResult, setAnalysisResult] = useState<MealAnalysisResult | null>(null);
 
@@ -346,14 +456,6 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
     return 'bg-red-500';
   };
 
-  const getScoreIcon = (type: 'vegetal' | 'healthy' | 'carbon') => {
-    switch (type) {
-      case 'vegetal': return Leaf;
-      case 'healthy': return Apple;
-      case 'carbon': return Cloud;
-    }
-  };
-
   return (
     <motion.div
       className="h-full flex flex-col bg-black overflow-y-auto relative"
@@ -369,7 +471,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
         >
           <X className="w-6 h-6 text-white" />
         </button>
-        <h2 className="text-white text-xl font-semibold">Nouveau post</h2>
+        <h2 className="text-white text-xl font-semibold">New post</h2>
         <div className="w-12" />
       </div>
 
@@ -425,10 +527,10 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
               <p className="text-white text-xl font-semibold mb-2">
-                Calcul de ton score écolo...
+                Calculating eco-score...
               </p>
               <p className="text-white/50 text-sm">
-                Recherche dans tes achats Carrefour
+                Checking your Carrefour purchases
               </p>
             </motion.div>
           ) : analysisResult ? (
@@ -445,7 +547,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
                 <div className="bg-purple-600 rounded-3xl p-6 shadow-xl border border-purple-400/30">
                   <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-2">
                     <Sparkles className="w-6 h-6" />
-                    Suggestions d'amélioration
+                    Improvement suggestions
                   </h3>
                   <div className="space-y-3">
                     {analysisResult.recommendations.map((rec, idx) => (
@@ -476,8 +578,8 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
                     <Check className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-white text-lg font-semibold">Analyse complète</div>
-                    <div className="text-white/80 text-sm">Impact carbone vérifié</div>
+                    <div className="text-white text-lg font-semibold">Analysis complete</div>
+                    <div className="text-white/80 text-sm">Carbon impact verified</div>
                   </div>
                 </div>
               </motion.div>
@@ -494,7 +596,7 @@ function PostView({ imageFile, imageUrl, onPost, onCancel }: PostViewProps) {
           className="w-full py-5 bg-white text-black rounded-2xl text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow-2xl"
           whileTap={{ scale: 0.95 }}
         >
-          Partager avec ta squad
+          Share with your squad
         </motion.button>
       </div>
     </motion.div>
