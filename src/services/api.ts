@@ -1,12 +1,22 @@
 // Helper to safely get user ID (client-side only)
+// This function should only be called from client components ('use client')
 function getUserIdSafe(): string {
+  // During SSR/build, return empty string
+  // These API functions should only be called from client-side code
   if (typeof window === 'undefined') {
-    // Return empty string during SSR/build - these functions should only be called client-side
     return '';
   }
-  // Dynamic import to avoid SSR issues
-  const { getUserId } = require('@/lib/cookies');
-  return getUserId();
+  
+  try {
+    // Use require with a try-catch to handle any bundler issues
+    // This is safe because we've already checked for window
+    const cookiesModule = require('@/lib/cookies');
+    return cookiesModule.getUserId();
+  } catch (error) {
+    // Fallback: generate a temporary ID if cookies module fails to load
+    console.warn('Failed to load getUserId, using fallback');
+    return 'temp-' + Math.random().toString(36).substring(7);
+  }
 }
 
 export interface Ingredient {
