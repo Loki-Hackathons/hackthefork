@@ -98,7 +98,7 @@ export function PreferencesOnboarding({ onComplete }: PreferencesOnboardingProps
             </div>
             <div>
               <h3 className="text-white font-semibold text-lg">Dietary Preference</h3>
-              <p className="text-white/60 text-sm">Where do you stand?</p>
+              <p className="text-white/60 text-sm">Where do you want to get to with your diet?</p>
             </div>
           </div>
 
