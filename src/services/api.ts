@@ -1,4 +1,13 @@
-import { getUserId } from '@/lib/cookies';
+// Helper to safely get user ID (client-side only)
+function getUserIdSafe(): string {
+  if (typeof window === 'undefined') {
+    // Return empty string during SSR/build - these functions should only be called client-side
+    return '';
+  }
+  // Dynamic import to avoid SSR issues
+  const { getUserId } = require('@/lib/cookies');
+  return getUserId();
+}
 
 export interface Ingredient {
   name: string;
@@ -198,7 +207,7 @@ export async function fetchPosts(): Promise<Post[]> {
     const posts: Post[] = data.posts || [];
     
     // Check upvote status for each post
-    const userId = getUserId();
+    const userId = getUserIdSafe();
     const postsWithUpvotes = await Promise.all(
       posts.map(async (post) => {
         try {
@@ -226,7 +235,7 @@ export async function fetchPosts(): Promise<Post[]> {
 // Toggle upvote on a post
 export async function toggleUpvote(postId: string): Promise<boolean> {
   try {
-    const userId = getUserId();
+    const userId = getUserIdSafe();
     const response = await fetch('/api/upvote', {
       method: 'POST',
       headers: {
@@ -250,7 +259,7 @@ export async function toggleUpvote(postId: string): Promise<boolean> {
 // Fetch user statistics
 export async function fetchUserStats(): Promise<UserStats> {
   try {
-    const userId = getUserId();
+    const userId = getUserIdSafe();
     const response = await fetch(`/api/stats?user_id=${userId}`);
     
     if (!response.ok) {
