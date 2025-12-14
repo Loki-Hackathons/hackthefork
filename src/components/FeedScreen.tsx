@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Share2, Bookmark, Leaf, Apple, Cloud, Sparkles, X
 import type { Screen } from './MainApp';
 import { fetchPosts, toggleUpvote, fetchComments, createComment, type Post, type Comment } from '@/services/api';
 import { getUserId, getUserName } from '@/lib/cookies';
+import { calculateAggregatedScore } from '@/lib/score-utils';
 
 // Helper function to format time ago
 function getTimeAgo(dateString: string): string {
@@ -380,9 +381,11 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId
           const post = posts.find(p => p.id === openScoreDetailsPostId);
           if (!post) return null;
           
-          const avgScore = Math.round(
-            (post.vegetal_score + post.health_score + post.carbon_score) / 3
-          );
+          const avgScore = calculateAggregatedScore({
+            vegetal: post.vegetal_score,
+            health: post.health_score,
+            carbon: post.carbon_score
+          });
           const scoreDetails = [
             {
               type: 'vegetal' as const,

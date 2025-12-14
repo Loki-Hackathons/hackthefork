@@ -22,18 +22,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Try to select name, but handle gracefully if column doesn't exist
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, created_at')
+      .select('id, created_at')
       .eq('id', userId)
       .single();
 
     if (error) {
+      // If column doesn't exist, return user without name
+      if (error.code === '42703') {
+        console.warn('users.name column does not exist, returning user without name');
+        return NextResponse.json({ user: { id: userId, name: null, created_at: null } });
+      }
       console.error('Error fetching user:', error);
       throw error;
     }
 
-    return NextResponse.json({ user: user || { id: userId, name: null, created_at: null } });
+    // Try to get name separately if column exists
+    let userName = null;
+    try {
+      const { data: userWithName } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+      userName = userWithName?.name || null;
+    } catch (nameError: any) {
+      // Column doesn't exist, that's okay
+      if (nameError.code !== '42703') {
+        console.warn('Could not fetch user name:', nameError);
+      }
+    }
+
+    return NextResponse.json({ 
+      user: user ? { ...user, name: userName } : { id: userId, name: null, created_at: null } 
+    });
   } catch (error: any) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
@@ -64,25 +88,39 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update user name
+    // Update user name (handle gracefully if column doesn't exist)
     const { data: user, error } = await supabase
       .from('users')
       .update({ name: name || null })
       .eq('id', user_id)
-      .select()
+      .select('id, created_at')
       .single();
 
     if (error) {
+      // If column doesn't exist, just update/create user without name
+      if (error.code === '42703') {
+        console.warn('users.name column does not exist, creating/updating user without name');
+        // Try to upsert user without name
+        const { data: newUser, error: upsertError } = await supabase
+          .from('users')
+          .upsert({ id: user_id, created_at: new Date().toISOString() }, { onConflict: 'id' })
+          .select('id, created_at')
+          .single();
+        
+        if (upsertError) throw upsertError;
+        return NextResponse.json({ user: { ...newUser, name: null } });
+      }
+      
       // If user doesn't exist, create it
       if (error.code === 'PGRST116') {
         const { data: newUser, error: createError } = await supabase
           .from('users')
-          .insert({ id: user_id, name: name || null })
-          .select()
+          .insert({ id: user_id })
+          .select('id, created_at')
           .single();
 
         if (createError) throw createError;
-        return NextResponse.json({ user: newUser });
+        return NextResponse.json({ user: { ...newUser, name: null } });
       }
       throw error;
     }

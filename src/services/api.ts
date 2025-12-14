@@ -283,9 +283,15 @@ export async function fetchUserStats(): Promise<UserStats> {
 }
 
 // Create a new post with image upload
+// NOTE: ingredients and scores should be pre-analyzed via /api/analyze
 export async function createPost(
   imageFile: File, 
-  feedback?: { rating: number | null; comment: string }
+  options?: {
+    ingredients?: Array<{ name: string; confidence: number; category: string }>;
+    scores?: { vegetal: number; health: number; carbon: number };
+    rating?: number | null;
+    comment?: string;
+  }
 ): Promise<Post> {
   try {
     const userId = getUserId();
@@ -293,14 +299,22 @@ export async function createPost(
     formData.append('image', imageFile);
     formData.append('user_id', userId);
     
+    // Add pre-analyzed ingredients and scores (required)
+    if (options?.ingredients && options?.scores) {
+      formData.append('ingredients', JSON.stringify(options.ingredients));
+      formData.append('vegetal_score', options.scores.vegetal.toString());
+      formData.append('health_score', options.scores.health.toString());
+      formData.append('carbon_score', options.scores.carbon.toString());
+    } else {
+      throw new Error('Ingredients and scores are required. Please analyze the image first.');
+    }
+    
     // Add feedback if provided
-    if (feedback) {
-      if (feedback.rating !== null) {
-        formData.append('rating', feedback.rating.toString());
-      }
-      if (feedback.comment) {
-        formData.append('comment', feedback.comment);
-      }
+    if (options?.rating !== null && options?.rating !== undefined) {
+      formData.append('rating', options.rating.toString());
+    }
+    if (options?.comment) {
+      formData.append('comment', options.comment);
     }
     
     const response = await fetch('/api/posts', {

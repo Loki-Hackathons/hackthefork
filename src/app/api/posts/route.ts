@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { calculateScores } from '@/lib/scoring';
 import type { DetectedIngredient } from '@/lib/image-analysis';
-
-// Lazy import for image analysis to avoid loading sharp on GET requests
-async function getImageAnalysis() {
-  return await import('@/lib/image-analysis');
-}
 
 // GET /api/posts - Fetch feed posts
 export async function GET(request: NextRequest) {
@@ -86,6 +80,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/posts - Create a new post
+// NOTE: Ingredients and scores should be pre-analyzed via /api/analyze
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -93,6 +88,12 @@ export async function POST(request: NextRequest) {
     const userId = formData.get('user_id') as string;
     const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null;
     const commentRaw = formData.get('comment') as string | null;
+    
+    // Get pre-analyzed ingredients and scores from form data
+    const ingredientsJson = formData.get('ingredients') as string | null;
+    const vegetalScore = formData.get('vegetal_score') ? parseInt(formData.get('vegetal_score') as string) : null;
+    const healthScore = formData.get('health_score') ? parseInt(formData.get('health_score') as string) : null;
+    const carbonScore = formData.get('carbon_score') ? parseInt(formData.get('carbon_score') as string) : null;
     
     // Validate rating if provided
     if (rating !== null && (rating < 1 || rating > 5)) {
@@ -122,30 +123,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate that ingredients and scores are provided (from /api/analyze)
+    if (!ingredientsJson || vegetalScore === null || healthScore === null || carbonScore === null) {
+      return NextResponse.json(
+        { error: 'Missing ingredients or scores. Please analyze the image first via /api/analyze' },
+        { status: 400 }
+      );
+    }
+
+    let detectedIngredients: DetectedIngredient[];
+    try {
+      detectedIngredients = JSON.parse(ingredientsJson);
+      if (!Array.isArray(detectedIngredients)) {
+        throw new Error('Ingredients must be an array');
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid ingredients format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate scores
+    if (vegetalScore < 0 || vegetalScore > 100 || 
+        healthScore < 0 || healthScore > 100 || 
+        carbonScore < 0 || carbonScore > 100) {
+      return NextResponse.json(
+        { error: 'Scores must be between 0 and 100' },
+        { status: 400 }
+      );
+    }
+
+    const scores = {
+      vegetal: vegetalScore,
+      health: healthScore,
+      carbon: carbonScore
+    };
+
     // Convert File to Buffer
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
-    // Analyze image (CLIP-based detection)
-    // Lazy load image analysis module only when needed
-    let detectedIngredients: DetectedIngredient[];
-    try {
-      const imageAnalysis = await getImageAnalysis();
-      // Try CLIP analysis, but fallback gracefully if it fails
-      detectedIngredients = await imageAnalysis.analyzeImage(buffer);
-      // If analysis returns empty or fails, use fallback
-      if (!detectedIngredients || detectedIngredients.length === 0) {
-        throw new Error('No ingredients detected');
-      }
-    } catch (error) {
-      console.warn('Image analysis not available, using fallback detection:', error);
-      // Fallback to basic detection based on common meal patterns
-      detectedIngredients = [
-        { name: 'vegetables', confidence: 0.7, category: 'plant' as const },
-        { name: 'rice', confidence: 0.65, category: 'plant' as const }
-      ];
-    }
-    const scores = calculateScores(detectedIngredients);
 
     // Upload image to Supabase Storage
     const fileExt = imageFile.name.split('.').pop();
