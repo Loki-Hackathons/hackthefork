@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Share2, Bookmark, Leaf, Apple, Cloud, Sparkles, X
 import type { Screen } from './MainApp';
 import { fetchPosts, toggleUpvote, fetchComments, createComment, type Post, type Comment } from '@/services/api';
 import { getUserId, getUserName } from '@/lib/cookies';
+import { calculateAggregatedScore } from '@/lib/score-utils';
 
 // Helper function to format time ago
 function getTimeAgo(dateString: string): string {
@@ -37,7 +38,7 @@ const getScoreColor = (score: number) => {
   return 'bg-red-500';
 };
 
-export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen, postId?: string, postImageUrl?: string) => void }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -380,9 +381,11 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
           const post = posts.find(p => p.id === openScoreDetailsPostId);
           if (!post) return null;
           
-          const avgScore = Math.round(
-            (post.vegetal_score + post.health_score + post.carbon_score) / 3
-          );
+          const avgScore = calculateAggregatedScore({
+            vegetal: post.vegetal_score,
+            health: post.health_score,
+            carbon: post.carbon_score
+          });
           const scoreDetails = [
             {
               type: 'vegetal' as const,
@@ -518,7 +521,7 @@ export function FeedScreen({ onNavigate }: { onNavigate: (screen: Screen) => voi
 interface FeedPostProps {
   post: Post;
   onLike: (postId: string) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, postId?: string, postImageUrl?: string) => void;
   isActive: boolean;
   isFirst: boolean;
   onCommentClick: () => void;
@@ -634,7 +637,7 @@ function FeedPost({
           <div className="flex-1 pb-1">
             {/* Action hint */}
             <motion.button 
-              onClick={() => onNavigate('shop')}
+              onClick={() => onNavigate('shop', post.id, post.image_url)}
               className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2.5 text-white text-sm flex items-center gap-2 hover:bg-white/20 transition-colors group border border-white/20"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

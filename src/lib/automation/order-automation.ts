@@ -5,38 +5,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Mock Data - Ingrédients par plat
- */
-function getRecipeIngredients(dishId: string) {
-  const recipes: Record<string, string[]> = {
-    'burger-vege': [
-      'Salade',
-      'Champignons'
-    ],
-    'pizza-vege': [
-      'Pâte à pizza bio',
-      'Sauce tomate bio',
-      'Fromage végétal',
-      'Champignons'
-    ],
-    'pasta-vege': [
-      'Pâtes complètes bio',
-      'Sauce tomate bio',
-      'Basilic frais',
-      'Ail bio'
-    ]
-  };
-  
-  return recipes[dishId] || recipes['burger-vege'];
-}
-
-/**
  * Fonction principale d'automatisation avec Playwright
+ * @param ingredients - Liste des ingrédients à rechercher et ajouter au panier
  */
-export async function startShoppingAutomation(dishId: string = 'burger-vege') {
-  console.log(`\n🍔 Démarrage de l'automatisation Playwright pour Auchan: ${dishId}`);
+export async function startShoppingAutomation(ingredients: string[]) {
+  if (!ingredients || ingredients.length === 0) {
+    throw new Error('La liste d\'ingrédients ne peut pas être vide');
+  }
   
-  const ingredients = getRecipeIngredients(dishId);
+  console.log(`\n🍔 Démarrage de l'automatisation Playwright pour Auchan`);
   console.log(`📋 Ingrédients à ajouter:`, ingredients);
   
   let browser;

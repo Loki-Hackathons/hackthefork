@@ -36,6 +36,7 @@ A B2C hackathon MVP for a food sustainability app. Users post photos of their me
    - Create a storage bucket named `meal-images` (public)
    - Copy your project URL and anon key
 
+
 3. **Configure environment**:
    Create `.env.local`:
    ```env
@@ -43,14 +44,18 @@ A B2C hackathon MVP for a food sustainability app. Users post photos of their me
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    ```
 
+
 4. **Run development server**:
    ```bash
    pnpm dev
    ```
 
+
 5. Open [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
+
+
 
 ```
 src/

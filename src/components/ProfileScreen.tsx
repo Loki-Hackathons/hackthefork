@@ -7,6 +7,7 @@ import { fetchUserStats, type UserStats } from '@/services/api';
 import { getUserId, getUserName, setUserName, getUserAvatar, getUserAvatarImage, setUserAvatar, setUserAvatarImage } from '@/lib/cookies';
 import { SettingsScreen } from './SettingsScreen';
 import type { Screen } from './MainApp';
+import { calculateAggregatedScore } from '@/lib/score-utils';
 
 const mockHistory = [
   { id: 1, score: 95, image: 'https://images.unsplash.com/photo-1693042978560-5711db96a991?w=400' },
@@ -104,7 +105,11 @@ export function ProfileScreen({ onNavigate }: ProfileScreenProps = {}) {
     // Avatar is computed in render, this just forces a re-render check
   }, [avatarRefresh]);
   const totalScore = stats 
-    ? Math.round((stats.avg_vegetal_score + stats.avg_health_score + stats.avg_carbon_score) / 3)
+    ? calculateAggregatedScore({
+        vegetal: stats.avg_vegetal_score,
+        health: stats.avg_health_score,
+        carbon: stats.avg_carbon_score
+      })
     : 0;
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {

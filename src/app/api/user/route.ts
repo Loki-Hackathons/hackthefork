@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Try to select name and avatar fields, but handle gracefully if columns don't exist
     const { data: user, error } = await supabase
       .from('users')
       .select('id, name, created_at, avatar_image_url, avatar')
@@ -29,11 +30,31 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error) {
+      // If column doesn't exist, return user without those fields
+      if (error.code === '42703') {
+        console.warn('Some user columns do not exist, trying basic select');
+        const { data: basicUser, error: basicError } = await supabase
+          .from('users')
+          .select('id, created_at')
+          .eq('id', userId)
+          .single();
+        
+        if (basicError) {
+          console.error('Error fetching user:', basicError);
+          throw basicError;
+        }
+        
+        return NextResponse.json({ 
+          user: { ...basicUser, name: null, avatar_image_url: null, avatar: null } 
+        });
+      }
       console.error('Error fetching user:', error);
       throw error;
     }
 
-    return NextResponse.json({ user: user || { id: userId, name: null, created_at: null } });
+    return NextResponse.json({ 
+      user: user || { id: userId, name: null, created_at: null, avatar_image_url: null, avatar: null } 
+    });
   } catch (error: any) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
@@ -128,7 +149,7 @@ export async function PATCH(request: NextRequest) {
       avatar_image_url = urlResponse.data.publicUrl;
     }
 
-    // Prepare update data
+    // Prepare update data (handle gracefully if columns don't exist)
     const updateData: any = {};
     if (name !== null) updateData.name = name || null;
     if (avatar !== null) updateData.avatar = avatar || null;
@@ -141,35 +162,65 @@ export async function PATCH(request: NextRequest) {
       updateData.avatar_image_url = null;
     }
 
-    // Update user
+    // Update user (handle gracefully if columns don't exist)
     const { data: user, error } = await supabase
       .from('users')
       .update(updateData)
       .eq('id', user_id)
-      .select()
+      .select('id, created_at, name, avatar_image_url, avatar')
       .single();
 
     if (error) {
+      // If column doesn't exist, try to update/create user with basic fields
+      if (error.code === '42703') {
+        console.warn('Some user columns do not exist, creating/updating user with basic fields');
+        // Try to upsert user with basic fields
+        const basicData: any = { id: user_id, created_at: new Date().toISOString() };
+        if (name !== null) basicData.name = name || null;
+        
+        const { data: newUser, error: upsertError } = await supabase
+          .from('users')
+          .upsert(basicData, { onConflict: 'id' })
+          .select('id, created_at')
+          .single();
+        
+        if (upsertError) throw upsertError;
+        return NextResponse.json({ user: { ...newUser, name: basicData.name || null, avatar_image_url: null, avatar: null } });
+      }
+      
       // If user doesn't exist, create it
       if (error.code === 'PGRST116') {
+        const insertData: any = { id: user_id };
+        if (name !== null) insertData.name = name || null;
+        if (avatar !== null) insertData.avatar = avatar || null;
+        if (avatar_image_url !== null) insertData.avatar_image_url = avatar_image_url || null;
+        
         const { data: newUser, error: createError } = await supabase
           .from('users')
-          .insert({ 
-            id: user_id, 
-            name: name || null,
-            avatar: avatar || null,
-            avatar_image_url: avatar_image_url || null
-          })
-          .select()
+          .insert(insertData)
+          .select('id, created_at, name, avatar_image_url, avatar')
           .single();
 
-        if (createError) throw createError;
-        return NextResponse.json({ user: newUser });
+        if (createError) {
+          // If columns don't exist, create with basic fields
+          if (createError.code === '42703') {
+            const { data: basicUser, error: basicCreateError } = await supabase
+              .from('users')
+              .insert({ id: user_id })
+              .select('id, created_at')
+              .single();
+            
+            if (basicCreateError) throw basicCreateError;
+            return NextResponse.json({ user: { ...basicUser, name: name || null, avatar_image_url: null, avatar: null } });
+          }
+          throw createError;
+        }
+        return NextResponse.json({ user: newUser || { id: user_id, name: name || null, created_at: null, avatar_image_url: avatar_image_url || null, avatar: avatar || null } });
       }
       throw error;
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user: user || { id: user_id, name: name || null, created_at: null, avatar_image_url: avatar_image_url || null, avatar: avatar || null } });
   } catch (error: any) {
     console.error('Error updating user:', error);
     return NextResponse.json(
