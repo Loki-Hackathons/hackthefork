@@ -383,7 +383,6 @@ function PostFlow({ imageFile, imageUrl, onPost, onCancel }: PostFlowProps) {
 
       {step === 'recipe' && analysisData && (
         <RecipeView
-          imageUrl={imageUrl}
           dishName={analysisData.dishName}
           onBack={() => setStep('analyzed')}
         />
